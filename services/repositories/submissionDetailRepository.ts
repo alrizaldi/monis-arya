@@ -3,12 +3,19 @@ import { Decimal } from '@prisma/client/runtime/library';
 
 const prisma = new PrismaClient();
 
+// Export the enum for use in other parts of the application
+export { SubmissionType };
+
 export class SubmissionDetailRepository {
   async findAll() {
     return await prisma.submissionDetail.findMany({
       include: {
         submission: true,
-        pendingHistories: true
+        pendingHistories: {
+          where: {
+            isActive: true
+          }
+        }
       }
     });
   }
