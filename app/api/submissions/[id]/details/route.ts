@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SubmissionService } from '@/services/submissionService';
-import { SubmissionTypeEnum } from '@/types/enums';
 
 const submissionService = new SubmissionService();
 
@@ -12,7 +11,7 @@ export async function POST(
     const body = await request.json();
     
     const detail = await submissionService.addSubmissionDetail(params.id, {
-      submissionType: SubmissionTypeEnum[body.submissionType as keyof typeof SubmissionTypeEnum] || body.submissionType,
+      submissionType: body.submissionType,
       submissionValue: body.submissionValue,
       note: body.note
     });
