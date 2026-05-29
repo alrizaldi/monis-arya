@@ -1,4 +1,4 @@
-import { PrismaClient, SubmissionType as PrismaSubmissionType } from '@prisma/client';
+import { PrismaClient, SubmissionType as PrismaSubmissionType, type SubmissionDetail } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 const prisma = new PrismaClient();

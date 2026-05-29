@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, type PendingHistory } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -11,9 +11,6 @@ export class PendingHistoryRepository {
             submission: true
           }
         }
-      },
-      orderBy: {
-        createdAt: 'desc'
       }
     });
   }
@@ -33,26 +30,7 @@ export class PendingHistoryRepository {
 
   async findBySubmissionDetailId(submissionDetailId: string) {
     return await prisma.pendingHistory.findMany({
-      where: { submissionDetailId },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
-  }
-
-  async findByIsActive(isActive: boolean) {
-    return await prisma.pendingHistory.findMany({
-      where: { isActive },
-      include: {
-        submissionDetail: {
-          include: {
-            submission: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
+      where: { submissionDetailId }
     });
   }
 
@@ -63,21 +41,36 @@ export class PendingHistoryRepository {
   }) {
     return await prisma.pendingHistory.create({
       data: {
-        ...data,
-        isActive: true
+        submissionDetailId: data.submissionDetailId,
+        pendingType: data.pendingType,
+        pendingNote: data.pendingNote
+      },
+      include: {
+        submissionDetail: {
+          include: {
+            submission: true
+          }
+        }
       }
     });
   }
 
   async update(id: string, data: Partial<{
     pendingType: string;
-    pendingNote: string;
-    resolvedAt: Date;
+    pendingNote?: string;
+    resolvedAt?: Date | null;
     isActive: boolean;
   }>) {
     return await prisma.pendingHistory.update({
       where: { id },
-      data
+      data,
+      include: {
+        submissionDetail: {
+          include: {
+            submission: true
+          }
+        }
+      }
     });
   }
 
@@ -91,8 +84,15 @@ export class PendingHistoryRepository {
     return await prisma.pendingHistory.update({
       where: { id },
       data: {
-        isActive: false,
-        resolvedAt: new Date()
+        resolvedAt: new Date(),
+        isActive: false
+      },
+      include: {
+        submissionDetail: {
+          include: {
+            submission: true
+          }
+        }
       }
     });
   }

@@ -1,14 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, type Payer } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 export class PayerRepository {
   async findAll() {
-    return await prisma.payer.findMany({
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
+    return await prisma.payer.findMany();
   }
 
   async findById(id: string) {
@@ -19,18 +15,28 @@ export class PayerRepository {
 
   async create(data: {
     payerName: string;
+    createdAt?: Date;
+    updatedAt?: Date;
   }) {
     return await prisma.payer.create({
-      data
+      data: {
+        payerName: data.payerName,
+        createdAt: data.createdAt || new Date(),
+        updatedAt: data.updatedAt || new Date()
+      }
     });
   }
 
-  async update(id: string, data: {
+  async update(id: string, data: Partial<{
     payerName: string;
-  }) {
+    updatedAt: Date;
+  }>) {
     return await prisma.payer.update({
       where: { id },
-      data
+      data: {
+        ...data,
+        updatedAt: new Date()
+      }
     });
   }
 

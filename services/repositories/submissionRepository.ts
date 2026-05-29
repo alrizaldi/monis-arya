@@ -1,4 +1,4 @@
-import { PrismaClient, SubmissionStatus as PrismaSubmissionStatus } from '@prisma/client';
+import { PrismaClient, SubmissionStatus as PrismaSubmissionStatus, type Submission } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 // 创建一个单一的 PrismaClient 实例

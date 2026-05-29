@@ -1,8 +1,5 @@
-import { 
-  SubmissionRepository, 
-  SubmissionStatus 
-} from './repositories/submissionRepository';
-import { SubmissionDetailRepository, SubmissionType } from './repositories/submissionDetailRepository';
+import { SubmissionRepository } from './repositories/submissionRepository';
+import { SubmissionDetailRepository } from './repositories/submissionDetailRepository';
 import { PendingHistoryRepository } from './repositories/pendingHistoryRepository';
 import { AuditLogRepository } from './repositories/auditLogRepository';
 import { Decimal } from '@prisma/client/runtime/library';
@@ -215,7 +212,7 @@ export class SubmissionService {
     } else {
       // Don't change status if it's already approved/rejected
       const submission = await submissionRepo.findById(submissionId);
-      if (submission && !['APPROVED', 'REJECTED'].includes(submission.status)) {
+      if (submission && ![Prisma.SubmissionStatus.APPROVED, Prisma.SubmissionStatus.REJECTED].includes(submission.status)) {
         // If no active pending, but status was PENDING, change to SUBMITTED
         if (submission.status === Prisma.SubmissionStatus.PENDING) {
           await submissionRepo.updateStatus(submissionId, Prisma.SubmissionStatus.SUBMITTED);

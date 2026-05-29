@@ -1,14 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, type Room } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 export class RoomRepository {
   async findAll() {
-    return await prisma.room.findMany({
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
+    return await prisma.room.findMany();
   }
 
   async findById(id: string) {
@@ -19,22 +15,34 @@ export class RoomRepository {
 
   async create(data: {
     roomNumber: string;
-    bedNumber: number;
+    bedNumber?: number;
     roomClass: string;
+    createdAt?: Date;
+    updatedAt?: Date;
   }) {
     return await prisma.room.create({
-      data
+      data: {
+        roomNumber: data.roomNumber,
+        bedNumber: data.bedNumber,
+        roomClass: data.roomClass,
+        createdAt: data.createdAt || new Date(),
+        updatedAt: data.updatedAt || new Date()
+      }
     });
   }
 
-  async update(id: string, data: {
+  async update(id: string, data: Partial<{
     roomNumber: string;
-    bedNumber: number;
+    bedNumber?: number;
     roomClass: string;
-  }) {
+    updatedAt: Date;
+  }>) {
     return await prisma.room.update({
       where: { id },
-      data
+      data: {
+        ...data,
+        updatedAt: new Date()
+      }
     });
   }
 
