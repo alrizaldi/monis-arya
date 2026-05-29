@@ -1,4 +1,4 @@
-import { PrismaClient, type PendingHistory } from '@prisma/client';
+import { PrismaClient, type PendingHistory, PendingType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -30,19 +30,26 @@ export class PendingHistoryRepository {
 
   async findBySubmissionDetailId(submissionDetailId: string) {
     return await prisma.pendingHistory.findMany({
-      where: { submissionDetailId }
+      where: { submissionDetailId },
+      include: {
+        submissionDetail: {
+          include: {
+            submission: true
+          }
+        }
+      }
     });
   }
 
   async create(data: {
     submissionDetailId: string;
-    pendingType: string;
+    pendingType: string; // Accepting string and converting to enum
     pendingNote?: string;
   }) {
     return await prisma.pendingHistory.create({
       data: {
         submissionDetailId: data.submissionDetailId,
-        pendingType: data.pendingType,
+        pendingType: data.pendingType as PendingType, // Convert string to enum
         pendingNote: data.pendingNote
       },
       include: {
@@ -56,14 +63,17 @@ export class PendingHistoryRepository {
   }
 
   async update(id: string, data: Partial<{
-    pendingType: string;
+    pendingType: string; // Accepting string and converting to enum
     pendingNote?: string;
-    resolvedAt?: Date | null;
-    isActive: boolean;
+    resolvedAt?: Date;
+    isActive?: boolean;
   }>) {
     return await prisma.pendingHistory.update({
       where: { id },
-      data,
+      data: {
+        ...data,
+        pendingType: data.pendingType ? data.pendingType as PendingType : undefined, // Convert string to enum if provided
+      },
       include: {
         submissionDetail: {
           include: {
@@ -71,12 +81,6 @@ export class PendingHistoryRepository {
           }
         }
       }
-    });
-  }
-
-  async delete(id: string) {
-    return await prisma.pendingHistory.delete({
-      where: { id }
     });
   }
 
@@ -94,6 +98,12 @@ export class PendingHistoryRepository {
           }
         }
       }
+    });
+  }
+
+  async delete(id: string) {
+    return await prisma.pendingHistory.delete({
+      where: { id }
     });
   }
 }

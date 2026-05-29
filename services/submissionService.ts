@@ -149,7 +149,7 @@ export class SubmissionService {
   }) {
     const pending = await pendingHistoryRepo.create({
       submissionDetailId,
-      pendingType: data.pendingType,
+      pendingType: data.pendingType, // Pass the string directly, repository handles conversion
       pendingNote: data.pendingNote
     });
     

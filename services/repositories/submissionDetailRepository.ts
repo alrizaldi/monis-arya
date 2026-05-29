@@ -1,9 +1,7 @@
-import { PrismaClient, SubmissionType as PrismaSubmissionType, type SubmissionDetail } from '@prisma/client';
+import { PrismaClient, type SubmissionDetail, SubmissionType } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 const prisma = new PrismaClient();
-
-export { PrismaSubmissionType as SubmissionType };
 
 export class SubmissionDetailRepository {
   async findAll() {
@@ -20,7 +18,15 @@ export class SubmissionDetailRepository {
       where: { id },
       include: {
         submission: true,
-        pendingHistories: true
+        pendingHistories: {
+          include: {
+            submissionDetail: {
+              include: {
+                submission: true
+              }
+            }
+          }
+        }
       }
     });
   }
@@ -48,28 +54,39 @@ export class SubmissionDetailRepository {
     return await prisma.submissionDetail.create({
       data: {
         submissionId: data.submissionId,
-        submissionType: data.submissionType as PrismaSubmissionType, // Convert string to enum
+        submissionType: data.submissionType as SubmissionType, // Convert string to enum
         submissionValue: data.submissionValue,
         note: data.note
       },
       include: {
         submission: true,
-        pendingHistories: true
+        pendingHistories: {
+          where: {
+            isActive: true
+          }
+        }
       }
     });
   }
 
   async update(id: string, data: Partial<{
-    submissionType: PrismaSubmissionType;
-    submissionValue: Decimal;
+    submissionType: string; // Accepting string and converting to enum
+    submissionValue?: Decimal;
     note?: string;
   }>) {
     return await prisma.submissionDetail.update({
       where: { id },
-      data,
+      data: {
+        ...data,
+        submissionType: data.submissionType ? data.submissionType as SubmissionType : undefined, // Convert string to enum if provided
+      },
       include: {
         submission: true,
-        pendingHistories: true
+        pendingHistories: {
+          where: {
+            isActive: true
+          }
+        }
       }
     });
   }

@@ -1,11 +1,10 @@
-import { PrismaClient, SubmissionStatus as PrismaSubmissionStatus, type Submission } from '@prisma/client';
-import { Decimal } from '@prisma/client/runtime/library';
+import { PrismaClient, type Submission, SubmissionStatus } from '@prisma/client';
 
 // 创建一个单一的 PrismaClient 实例
 const prisma = new PrismaClient();
 
-// 导出 Prisma 提供的 SubmissionStatus 枚举
-export { PrismaSubmissionStatus as SubmissionStatus };
+// Export the enum for use in other parts of the application
+export { SubmissionStatus };
 
 /**
  * SubmissionRepository 类用于管理提交记录
@@ -67,8 +66,7 @@ export class SubmissionRepository {
         submissionNumber: data.submissionNumber,
         patientId: data.patientId,
         roomId: data.roomId,
-        payerId: data.payerId,
-        status: PrismaSubmissionStatus.DRAFT
+        payerId: data.payerId
       },
       include: {
         patient: true,
@@ -89,11 +87,13 @@ export class SubmissionRepository {
     patientId: string;
     roomId: string;
     payerId: string;
-    status: PrismaSubmissionStatus;
+    status: string; // Accepting string and converting to enum
   }>) {
     return await prisma.submission.update({
       where: { id },
-      data,
+      data: {
+        ...data,
+        status: data.status ? data.status as SubmissionStatus : undefined // Convert string to enum if provided
       include: {
         patient: true,
         room: true,
@@ -114,15 +114,25 @@ export class SubmissionRepository {
    * @param status 新的状态值
    * @returns 更新后的提交记录
    */
-  async updateStatus(id: string, status: PrismaSubmissionStatus): Promise<Submission> {
+  async updateStatus(id: string, status: string): Promise<Submission> {
+    // Map status to appropriate timestamp
+    const updateData: any = { status: status as SubmissionStatus }; // Convert string to enum
+    
+    switch(status) {
+      case 'SUBMITTED':
+        updateData.submittedAt = new Date();
+        break;
+      case 'APPROVED':
+        updateData.approvedAt = new Date();
+        break;
+      case 'REJECTED':
+        updateData.rejectedAt = new Date();
+        break;
+    }
+    
     return await prisma.submission.update({
       where: { id },
-      data: { 
-        status,
-        ...(status === PrismaSubmissionStatus.SUBMITTED && { submittedAt: new Date() }),
-        ...(status === PrismaSubmissionStatus.APPROVED && { approvedAt: new Date() }),
-        ...(status === PrismaSubmissionStatus.REJECTED && { rejectedAt: new Date() })
-      },
+      data: updateData,
       include: {
         patient: true,
         room: true,
