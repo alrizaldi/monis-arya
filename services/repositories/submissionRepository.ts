@@ -1,4 +1,4 @@
-import { PrismaClient, Submission, SubmissionStatus as PrismaSubmissionStatus } from '@prisma/client';
+import { PrismaClient, SubmissionStatus as PrismaSubmissionStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 // 创建一个单一的 PrismaClient 实例
@@ -36,7 +36,7 @@ export class SubmissionRepository {
    * @param id 提交的唯一标识符
    * @returns 找到的提交记录，如果未找到则返回 null
    */
-  async findById(id: string): Promise<Submission | null> {
+  async findById(id: string) {
     return await prisma.submission.findUnique({
       where: { id },
       include: {

@@ -6,6 +6,7 @@ import { SubmissionDetailRepository, SubmissionType } from './repositories/submi
 import { PendingHistoryRepository } from './repositories/pendingHistoryRepository';
 import { AuditLogRepository } from './repositories/auditLogRepository';
 import { Decimal } from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
 
 const submissionRepo = new SubmissionRepository();
 const submissionDetailRepo = new SubmissionDetailRepository();
@@ -46,7 +47,7 @@ export class SubmissionService {
     patientId: string;
     roomId: string;
     payerId: string;
-    status: SubmissionStatus;
+    status: Prisma.SubmissionStatus;
   }>) {
     const submission = await submissionRepo.update(id, data);
     
@@ -63,7 +64,7 @@ export class SubmissionService {
   }
 
   async submitSubmission(id: string) {
-    const submission = await submissionRepo.updateStatus(id, SubmissionStatus.SUBMITTED);
+    const submission = await submissionRepo.updateStatus(id, Prisma.SubmissionStatus.SUBMITTED);
     
     // Log the submission
     await auditLogRepo.create({
@@ -78,7 +79,7 @@ export class SubmissionService {
   }
 
   async approveSubmission(id: string) {
-    const submission = await submissionRepo.updateStatus(id, SubmissionStatus.APPROVED);
+    const submission = await submissionRepo.updateStatus(id, Prisma.SubmissionStatus.APPROVED);
     
     // Log the approval
     await auditLogRepo.create({
@@ -93,7 +94,7 @@ export class SubmissionService {
   }
 
   async rejectSubmission(id: string) {
-    const submission = await submissionRepo.updateStatus(id, SubmissionStatus.REJECTED);
+    const submission = await submissionRepo.updateStatus(id, Prisma.SubmissionStatus.REJECTED);
     
     // Log the rejection
     await auditLogRepo.create({
@@ -132,7 +133,7 @@ export class SubmissionService {
   }) {
     const detail = await submissionDetailRepo.create({
       submissionId,
-      submissionType: data.submissionType as SubmissionType, // Type assertion to the proper enum
+      submissionType: data.submissionType, // Pass the string directly, repository handles conversion
       submissionValue: new Decimal(data.submissionValue.toString()),
       note: data.note
     });
