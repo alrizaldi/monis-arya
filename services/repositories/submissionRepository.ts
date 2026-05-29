@@ -1,4 +1,18 @@
-import { PrismaClient, SubmissionStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
+
+const prisma = new PrismaClient();
+
+/**
+ * SubmissionStatus enum represents the possible statuses of a submission.
+ */
+export enum SubmissionStatus {
+  DRAFT = 'DRAFT',
+  SUBMITTED = 'SUBMITTED',
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
 
 const prisma = new PrismaClient();
 
@@ -41,15 +55,6 @@ export class SubmissionRepository {
     });
   }
 
-  async findByStatus(status: SubmissionStatus) {
-    return await prisma.submission.findMany({
-      where: { status },
-      include: {
-        patient: true,
-        payer: true
-      }
-    });
-  }
 
   async create(data: {
     submissionNumber: string;
@@ -59,8 +64,16 @@ export class SubmissionRepository {
   }) {
     return await prisma.submission.create({
       data: {
-        ...data,
+        submissionNumber: data.submissionNumber,
+        patientId: data.patientId,
+        roomId: data.roomId,
+        payerId: data.payerId,
         status: 'DRAFT'
+      },
+      include: {
+        patient: true,
+        room: true,
+        payer: true
       }
     });
   }
@@ -71,13 +84,15 @@ export class SubmissionRepository {
     roomId: string;
     payerId: string;
     status: SubmissionStatus;
-    submittedAt: Date;
-    approvedAt: Date;
-    rejectedAt: Date;
   }>) {
     return await prisma.submission.update({
       where: { id },
-      data
+      data,
+      include: {
+        patient: true,
+        room: true,
+        payer: true
+      }
     });
   }
 
@@ -88,19 +103,19 @@ export class SubmissionRepository {
   }
 
   async updateStatus(id: string, status: SubmissionStatus) {
-    const updateData: any = { status };
-    
-    if (status === 'SUBMITTED') {
-      updateData.submittedAt = new Date();
-    } else if (status === 'APPROVED') {
-      updateData.approvedAt = new Date();
-    } else if (status === 'REJECTED') {
-      updateData.rejectedAt = new Date();
-    }
-    
     return await prisma.submission.update({
       where: { id },
-      data: updateData
+      data: { 
+        status,
+        ...(status === 'SUBMITTED' && { submittedAt: new Date() }),
+        ...(status === 'APPROVED' && { approvedAt: new Date() }),
+        ...(status === 'REJECTED' && { rejectedAt: new Date() })
+      },
+      include: {
+        patient: true,
+        room: true,
+        payer: true
+      }
     });
   }
 }
