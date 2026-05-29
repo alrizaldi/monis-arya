@@ -1,6 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
+// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,6 +9,13 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// Gender enum
+enum Gender {
+  MALE
+  FEMALE
+}
+
+// Submission status enum
 enum SubmissionStatus {
   DRAFT
   SUBMITTED
@@ -19,6 +24,7 @@ enum SubmissionStatus {
   REJECTED
 }
 
+// Submission type enum
 enum SubmissionType {
   ROOM
   MEDICINE
@@ -27,93 +33,112 @@ enum SubmissionType {
   OTHER
 }
 
+// Pending type enum
+enum PendingType {
+  AUTHORIZATION_REQUIRED
+  DOCUMENTATION_MISSING
+  CLARIFICATION_NEEDED
+  SYSTEM_ERROR
+  INSURANCE_REVIEW
+  OTHER
+}
+
 model Patient {
-  id                  String   @id @default(cuid())
-  medicalRecordNumber String   @unique
-  patientName         String
-  gender              String
-  birthDate           DateTime
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                   String   @id @default(uuid())
+  medicalRecordNumber  String   @unique
+  patientName          String
+  gender               Gender
+  birthDate            DateTime
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
   
+  // Relations
   submissions Submission[]
 }
 
 model Room {
-  id        String   @id @default(cuid())
-  roomNumber String
-  bedNumber  Int?
-  roomClass  String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String   @id @default(uuid())
+  roomNumber  String
+  bedNumber   Int?
+  roomClass   String   // VIP, GENERAL, etc.
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   
+  // Relations
   submissions Submission[]
 }
 
 model Payer {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   payerName String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
+  // Relations
   submissions Submission[]
 }
 
 model Submission {
-  id               String             @id @default(cuid())
+  id               String             @id @default(uuid())
   submissionNumber String             @unique
   patientId        String
   roomId           String
   payerId          String
   status           SubmissionStatus   @default(DRAFT)
+  submittedAt      DateTime?
+  approvedAt       DateTime?
+  rejectedAt       DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
   
-  submittedAt DateTime?
-  approvedAt  DateTime?
-  rejectedAt  DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  // Relations
+  patient Patient @relation(fields: [patientId], references: [id])
+  room    Room    @relation(fields: [roomId], references: [id])
+  payer   Payer   @relation(fields: [payerId], references: [id])
+  details SubmissionDetail[]
   
-  patient  Patient       @relation(fields: [patientId], references: [id])
-  room     Room          @relation(fields: [roomId], references: [id])
-  payer    Payer         @relation(fields: [payerId], references: [id])
-  details  SubmissionDetail[]
+  @@map("submissions")
 }
 
 model SubmissionDetail {
-  id              String           @id @default(cuid())
+  id              String            @id @default(uuid())
   submissionId    String
   submissionType  SubmissionType
   submissionValue Decimal
   note            String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
   
-  submission      Submission       @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  // Relations
+  submission      Submission      @relation(fields: [submissionId], references: [id])
   pendingHistories PendingHistory[]
+  
+  @@map("submission_details")
 }
 
 model PendingHistory {
-  id                 String   @id @default(cuid())
+  id                String   @id @default(uuid())
   submissionDetailId String
-  pendingType        String
-  pendingNote        String?
-  createdAt          DateTime @default(now())
-  resolvedAt         DateTime?
-  isActive           Boolean  @default(true)
+  pendingType       PendingType
+  pendingNote       String?
+  createdAt         DateTime @default(now())
+  resolvedAt        DateTime?
+  isActive          Boolean  @default(true)
   
-  submissionDetail SubmissionDetail @relation(fields: [submissionDetailId], references: [id], onDelete: Cascade)
+  // Relations
+  submissionDetail SubmissionDetail @relation(fields: [submissionDetailId], references: [id])
+  
+  @@map("pending_histories")
 }
 
 model AuditLog {
-  id          String   @id @default(cuid())
-  moduleName  String
-  actionType  String
-  referenceId String?
-  description String
-  createdBy   String?
-  createdAt   DateTime @default(now())
+  id           String   @id @default(uuid())
+  moduleName   String   // Patients, Submissions, Pending, etc.
+  actionType   String   // CREATE_PATIENT, UPDATE_SUBMISSION, etc.
+  referenceId  String?  // ID of the record that was affected
+  description  String
+  createdBy    String   // User ID or system
+  createdAt    DateTime @default(now())
   
-  @@index([moduleName])
-  @@index([actionType])
-  @@index([createdAt])
+  @@map("audit_logs")
 }

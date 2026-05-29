@@ -1,5 +1,6 @@
 import { PrismaClient, SubmissionStatus, SubmissionType } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
+import { createClient } from '@supabase/supabase-js';
 
 const prisma = new PrismaClient();
 
