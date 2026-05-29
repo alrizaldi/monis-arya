@@ -31,7 +31,7 @@ export default function LoginPage() {
       }
       
       if (result.error) {
-        // Handle specific error messages
+        // 处理特定错误消息
         if (result.error.message.includes('Rate limit')) {
           setError('Too many requests. Please try again later or contact administrator.');
         } else if (result.error.message.includes('Invalid login credentials')) {
@@ -117,11 +117,16 @@ export default function LoginPage() {
               </button>
             </div>
             
-            <p className="mt-4 text-center text-xs text-gray-500">
-              Note: First-time users need to create an account. 
-              If you encounter rate limits, please contact the system administrator to create your account.
-              Demo credentials: demo@example.com / password123 (if available)
-            </p>
+            <div className="mt-4 text-center text-xs text-gray-500">
+              <p>
+                Note: First-time users need to create an account. 
+                If you encounter rate limits, please contact the system administrator.
+              </p>
+              <p className="mt-2">
+                <strong>Admin Tip:</strong> For development, create users via Supabase Dashboard 
+                to avoid email rate limits.
+              </p>
+            </div>
           </CardFooter>
         </form>
       </Card>
