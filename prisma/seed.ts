@@ -10,10 +10,10 @@ async function main() {
     update: {},
     create: {
       id: 'pat-001',
-      medicalRecordNumber: 'MRN-001',
-      firstName: 'John',
-      lastName: 'Doe',
-      dateOfBirth: new Date('1985-05-15'),
+      medical_record_number: 'MRN-001',
+      first_name: 'John',
+      last_name: 'Doe',
+      date_of_birth: new Date('1985-05-15'),
       gender: 'MALE',
       phone: '+1234567890',
       email: 'john.doe@example.com',
@@ -26,10 +26,10 @@ async function main() {
     update: {},
     create: {
       id: 'pat-002',
-      medicalRecordNumber: 'MRN-002',
-      firstName: 'Jane',
-      lastName: 'Smith',
-      dateOfBirth: new Date('1990-08-22'),
+      medical_record_number: 'MRN-002',
+      first_name: 'Jane',
+      last_name: 'Smith',
+      date_of_birth: new Date('1990-08-22'),
       gender: 'FEMALE',
       phone: '+1987654321',
       email: 'jane.smith@example.com',
@@ -43,9 +43,9 @@ async function main() {
     update: {},
     create: {
       id: 'room-001',
-      roomNumber: '101',
-      bedNumber: 'A1',
-      roomClass: 'VIP'
+      room_number: '101',
+      bed_number: 'A1',
+      room_class: 'VIP'
     },
   });
 
@@ -54,9 +54,9 @@ async function main() {
     update: {},
     create: {
       id: 'room-002',
-      roomNumber: '102',
-      bedNumber: 'A2',
-      roomClass: 'GENERAL'
+      room_number: '102',
+      bed_number: 'A2',
+      room_class: 'GENERAL'
     },
   });
 
@@ -66,9 +66,9 @@ async function main() {
     update: {},
     create: {
       id: 'pay-001',
-      payerCode: 'AETNA',
-      payerName: 'Aetna Health Insurance',
-      contactPerson: 'Michael Johnson',
+      payer_code: 'AETNA',
+      payer_name: 'Aetna Health Insurance',
+      contact_person: 'Michael Johnson',
       phone: '+1555123456',
       email: 'contact@aetna.com',
       address: '789 Insurance Blvd, Hartford, CT'
@@ -80,9 +80,9 @@ async function main() {
     update: {},
     create: {
       id: 'pay-002',
-      payerCode: 'CIGNA',
-      payerName: 'Cigna Healthcare',
-      contactPerson: 'Sarah Williams',
+      payer_code: 'CIGNA',
+      payer_name: 'Cigna Healthcare',
+      contact_person: 'Sarah Williams',
       phone: '+1555987654',
       email: 'info@cigna.com',
       address: '321 Health St, Bloomfield, CT'
@@ -95,11 +95,11 @@ async function main() {
     update: {},
     create: {
       id: 'sub-001',
-      submissionNumber: 'SUB-001',
-      patientId: patient1.id,
-      roomId: room1.id,
-      payerId: payer1.id,
-      status: 'SUBMITTED' as SubmissionStatus,
+      submission_number: 'SUB-001',
+      patient_id: patient1.id,
+      room_id: room1.id,
+      payer_id: payer1.id,
+      status: 'SUBMITTED'
     },
   });
 
@@ -108,11 +108,11 @@ async function main() {
     update: {},
     create: {
       id: 'sub-002',
-      submissionNumber: 'SUB-002',
-      patientId: patient2.id,
-      roomId: room2.id,
-      payerId: payer2.id,
-      status: 'DRAFT' as SubmissionStatus,
+      submission_number: 'SUB-002',
+      patient_id: patient2.id,
+      room_id: room2.id,
+      payer_id: payer2.id,
+      status: 'DRAFT'
     },
   });
 
@@ -120,9 +120,9 @@ async function main() {
   const detail1 = await prisma.submissionDetail.create({
     data: {
       id: 'sd-001',
-      submissionId: submission1.id,
-      submissionType: 'ROOM_CHARGE',
-      submissionValue: new Decimal(1500.00),
+      submission_id: submission1.id,
+      submission_type: 'ROOM_CHARGE',
+      submission_value: new Decimal(1500.00),
       note: 'Standard room charge for 3 days'
     }
   });
@@ -130,9 +130,9 @@ async function main() {
   const detail2 = await prisma.submissionDetail.create({
     data: {
       id: 'sd-002',
-      submissionId: submission1.id,
-      submissionType: 'MEDICINE',
-      submissionValue: new Decimal(250.50),
+      submission_id: submission1.id,
+      submission_type: 'MEDICINE',
+      submission_value: new Decimal(250.50),
       note: 'Prescription medication'
     }
   });
@@ -140,21 +140,33 @@ async function main() {
   const detail3 = await prisma.submissionDetail.create({
     data: {
       id: 'sd-003',
-      submissionId: submission1.id,
-      submissionType: 'LAB',
-      submissionValue: new Decimal(300.75),
+      submission_id: submission1.id,
+      submission_type: 'LAB',
+      submission_value: new Decimal(300.75),
       note: 'Blood test lab work'
     }
   });
 
-  // Create sample pending histories
+  // Create pending history for some details
   await prisma.pendingHistory.create({
     data: {
-      submissionDetailId: detail4.id,
-      pendingType: 'Authorization Required',
-      pendingNote: 'Additional authorization needed for MRI scan',
-      isActive: true,
-      createdAt: new Date('2023-05-02T10:00:00Z'),
+      id: 'ph-001',
+      submission_detail_id: detail1.id,
+      pending_type: 'AUTHORIZATION_REQUIRED',
+      pending_note: 'Requires prior authorization from insurance',
+      resolved_at: null,
+      is_active: true
+    }
+  });
+
+  await prisma.pendingHistory.create({
+    data: {
+      id: 'ph-002',
+      submission_detail_id: detail2.id,
+      pending_type: 'DOCUMENTATION_MISSING',
+      pending_note: 'Missing prescription documentation',
+      resolved_at: new Date(),
+      is_active: false
     }
   });
 
@@ -163,43 +175,43 @@ async function main() {
     data: [
       {
         id: 'al-001',
-        moduleName: 'Patients',
-        actionType: 'CREATE_PATIENT',
-        referenceId: patient1.id,
-        description: `Created patient ${patient1.firstName} ${patient1.lastName}`,
-        createdBy: 'system'
+        module_name: 'Patients',
+        action_type: 'CREATE_PATIENT',
+        reference_id: patient1.id,
+        description: `Created patient ${patient1.first_name} ${patient1.last_name}`,
+        created_by: 'system'
       },
       {
         id: 'al-002',
-        moduleName: 'Rooms',
-        actionType: 'CREATE_ROOM',
-        referenceId: room1.id,
-        description: `Created room ${room1.roomNumber}`,
-        createdBy: 'system'
+        module_name: 'Rooms',
+        action_type: 'CREATE_ROOM',
+        reference_id: room1.id,
+        description: `Created room ${room1.room_number}`,
+        created_by: 'system'
       },
       {
         id: 'al-003',
-        moduleName: 'Submissions',
-        actionType: 'CREATE_SUBMISSION',
-        referenceId: submission1.id,
-        description: `Created submission ${submission1.submissionNumber}`,
-        createdBy: 'system'
+        module_name: 'Submissions',
+        action_type: 'CREATE_SUBMISSION',
+        reference_id: submission1.id,
+        description: `Created submission ${submission1.submission_number}`,
+        created_by: 'system'
       },
       {
         id: 'al-004',
-        moduleName: 'Pending',
-        actionType: 'ADD_PENDING',
-        referenceId: detail1.id,
-        description: `Added pending record for detail in submission ${submission1.submissionNumber}`,
-        createdBy: 'system'
+        module_name: 'Pending',
+        action_type: 'ADD_PENDING',
+        reference_id: detail1.id,
+        description: `Added pending record for detail in submission ${submission1.submission_number}`,
+        created_by: 'system'
       },
       {
         id: 'al-005',
-        moduleName: 'Pending',
-        actionType: 'RESOLVE_PENDING',
-        referenceId: detail2.id,
-        description: `Resolved pending record for detail in submission ${submission1.submissionNumber}`,
-        createdBy: 'system'
+        module_name: 'Pending',
+        action_type: 'RESOLVE_PENDING',
+        reference_id: detail2.id,
+        description: `Resolved pending record for detail in submission ${submission1.submission_number}`,
+        created_by: 'system'
       }
     ]
   });
