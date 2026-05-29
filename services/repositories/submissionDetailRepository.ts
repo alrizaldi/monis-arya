@@ -41,14 +41,14 @@ export class SubmissionDetailRepository {
 
   async create(data: {
     submissionId: string;
-    submissionType: PrismaSubmissionType;
+    submissionType: string; // Accepting string and converting to enum
     submissionValue: Decimal;
     note?: string;
   }) {
     return await prisma.submissionDetail.create({
       data: {
         submissionId: data.submissionId,
-        submissionType: data.submissionType,
+        submissionType: data.submissionType as PrismaSubmissionType, // Convert string to enum
         submissionValue: data.submissionValue,
         note: data.note
       },

@@ -1,4 +1,4 @@
-import { PrismaClient, SubmissionStatus } from '@prisma/client';
+import { PrismaClient, SubmissionStatus, SubmissionType } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 const prisma = new PrismaClient();
@@ -93,7 +93,7 @@ async function main() {
       patientId: patient1.id,
       roomId: room1.id,
       payerId: payer1.id,
-      status: 'SUBMITTED',
+      status: SubmissionStatus.SUBMITTED,
       submittedAt: new Date(),
       createdAt: new Date(),
       updatedAt: new Date()
@@ -109,7 +109,7 @@ async function main() {
       patientId: patient2.id,
       roomId: room2.id,
       payerId: payer2.id,
-      status: 'DRAFT',
+      status: SubmissionStatus.DRAFT,
       createdAt: new Date(),
       updatedAt: new Date()
     },
@@ -120,7 +120,7 @@ async function main() {
     data: {
       id: 'sd-001',
       submissionId: submission1.id,
-      submissionType: 'ROOM',
+      submissionType: SubmissionType.ROOM,
       submissionValue: new Decimal(1500.00),
       note: 'Standard room charge for 3 days',
       createdAt: new Date(),
@@ -132,7 +132,7 @@ async function main() {
     data: {
       id: 'sd-002',
       submissionId: submission1.id,
-      submissionType: 'MEDICINE',
+      submissionType: SubmissionType.MEDICINE,
       submissionValue: new Decimal(250.50),
       note: 'Prescription medication',
       createdAt: new Date(),
@@ -144,7 +144,7 @@ async function main() {
     data: {
       id: 'sd-003',
       submissionId: submission1.id,
-      submissionType: 'LAB',
+      submissionType: SubmissionType.LAB,
       submissionValue: new Decimal(300.75),
       note: 'Blood test lab work',
       createdAt: new Date(),
