@@ -1,6 +1,7 @@
 'use client';
 
-import { redirect } from 'next/navigation';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import Sidebar from '@/components/Sidebar';
 
@@ -10,9 +11,27 @@ export default function PatientsLayout({
   children: React.ReactNode;
 }) {
   const { session } = useAuth();
+  const router = useRouter();
 
-  if (!session) {
-    redirect('/login');
+  // Redirect only when session is definitively null (not just undefined during loading)
+  useEffect(() => {
+    if (session === null) {
+      router.push('/login');
+    }
+  }, [session, router]);
+
+  // Show loading state while session is being determined
+  if (session === undefined) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  // If session is null (user not authenticated), don't render anything since redirect is happening
+  if (session === null) {
+    return null;
   }
 
   return (

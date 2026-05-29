@@ -1,1 +1,10 @@
-{}
+{
+  "/login/page": "app/login/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/patients/page": "app/patients/page.js",
+  "/rooms/page": "app/rooms/page.js",
+  "/payers/page": "app/payers/page.js",
+  "/submissions/page": "app/submissions/page.js",
+  "/pending/page": "app/pending/page.js",
+  "/audit/page": "app/audit/page.js"
+}
