@@ -1,4 +1,4 @@
-import { createBrowserClient } from "@supabase/ssr";
+import { createBrowserClient, type CookieOptions } from "@supabase/ssr";
 
 export function createClient() {
   return createBrowserClient(
@@ -19,7 +19,7 @@ export function createClient() {
           });
           return cookies;
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: any[]) {
           if (typeof document === "undefined") return;
 
           cookiesToSet.forEach(({ name, value, options }) => {
