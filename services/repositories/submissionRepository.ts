@@ -93,7 +93,8 @@ export class SubmissionRepository {
       where: { id },
       data: {
         ...data,
-        status: data.status ? data.status as SubmissionStatus : undefined // Convert string to enum if provided
+        status: data.status ? data.status as SubmissionStatus : undefined, // Convert string to enum if provided
+      },
       include: {
         patient: true,
         room: true,
