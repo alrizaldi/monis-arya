@@ -1,0 +1,119 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum SubmissionStatus {
+  DRAFT
+  SUBMITTED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum SubmissionType {
+  ROOM
+  MEDICINE
+  LAB
+  PROCEDURE
+  OTHER
+}
+
+model Patient {
+  id                  String   @id @default(cuid())
+  medicalRecordNumber String   @unique
+  patientName         String
+  gender              String
+  birthDate           DateTime
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  submissions Submission[]
+}
+
+model Room {
+  id        String   @id @default(cuid())
+  roomNumber String
+  bedNumber  Int?
+  roomClass  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  submissions Submission[]
+}
+
+model Payer {
+  id        String   @id @default(cuid())
+  payerName String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  submissions Submission[]
+}
+
+model Submission {
+  id               String             @id @default(cuid())
+  submissionNumber String             @unique
+  patientId        String
+  roomId           String
+  payerId          String
+  status           SubmissionStatus   @default(DRAFT)
+  
+  submittedAt DateTime?
+  approvedAt  DateTime?
+  rejectedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  patient  Patient       @relation(fields: [patientId], references: [id])
+  room     Room          @relation(fields: [roomId], references: [id])
+  payer    Payer         @relation(fields: [payerId], references: [id])
+  details  SubmissionDetail[]
+}
+
+model SubmissionDetail {
+  id              String           @id @default(cuid())
+  submissionId    String
+  submissionType  SubmissionType
+  submissionValue Decimal
+  note            String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  submission      Submission       @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  pendingHistories PendingHistory[]
+}
+
+model PendingHistory {
+  id                 String   @id @default(cuid())
+  submissionDetailId String
+  pendingType        String
+  pendingNote        String?
+  createdAt          DateTime @default(now())
+  resolvedAt         DateTime?
+  isActive           Boolean  @default(true)
+  
+  submissionDetail SubmissionDetail @relation(fields: [submissionDetailId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  moduleName  String
+  actionType  String
+  referenceId String?
+  description String
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  
+  @@index([moduleName])
+  @@index([actionType])
+  @@index([createdAt])
+}
