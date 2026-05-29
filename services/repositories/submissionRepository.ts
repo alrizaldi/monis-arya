@@ -1,16 +1,11 @@
-import { PrismaClient, Submission } from '@prisma/client';
+import { PrismaClient, Submission, SubmissionStatus as PrismaSubmissionStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 // 创建一个单一的 PrismaClient 实例
 const prisma = new PrismaClient();
 
-export enum SubmissionStatus {
-  DRAFT = 'DRAFT',
-  SUBMITTED = 'SUBMITTED',
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-}
+// 导出 Prisma 提供的 SubmissionStatus 枚举
+export { PrismaSubmissionStatus as SubmissionStatus };
 
 /**
  * SubmissionRepository 类用于管理提交记录
@@ -73,7 +68,7 @@ export class SubmissionRepository {
         patientId: data.patientId,
         roomId: data.roomId,
         payerId: data.payerId,
-        status: 'DRAFT'
+        status: PrismaSubmissionStatus.DRAFT
       },
       include: {
         patient: true,
@@ -94,8 +89,8 @@ export class SubmissionRepository {
     patientId: string;
     roomId: string;
     payerId: string;
-    status: SubmissionStatus;
-  }>): Promise<Submission> {
+    status: PrismaSubmissionStatus;
+  }>) {
     return await prisma.submission.update({
       where: { id },
       data,
@@ -119,14 +114,14 @@ export class SubmissionRepository {
    * @param status 新的状态值
    * @returns 更新后的提交记录
    */
-  async updateStatus(id: string, status: SubmissionStatus): Promise<Submission> {
+  async updateStatus(id: string, status: PrismaSubmissionStatus): Promise<Submission> {
     return await prisma.submission.update({
       where: { id },
       data: { 
         status,
-        ...(status === 'SUBMITTED' && { submittedAt: new Date() }),
-        ...(status === 'APPROVED' && { approvedAt: new Date() }),
-        ...(status === 'REJECTED' && { rejectedAt: new Date() })
+        ...(status === PrismaSubmissionStatus.SUBMITTED && { submittedAt: new Date() }),
+        ...(status === PrismaSubmissionStatus.APPROVED && { approvedAt: new Date() }),
+        ...(status === PrismaSubmissionStatus.REJECTED && { rejectedAt: new Date() })
       },
       include: {
         patient: true,

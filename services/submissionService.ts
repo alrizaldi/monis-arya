@@ -2,7 +2,7 @@ import {
   SubmissionRepository, 
   SubmissionStatus 
 } from './repositories/submissionRepository';
-import { SubmissionDetailRepository } from './repositories/submissionDetailRepository';
+import { SubmissionDetailRepository, SubmissionType } from './repositories/submissionDetailRepository';
 import { PendingHistoryRepository } from './repositories/pendingHistoryRepository';
 import { AuditLogRepository } from './repositories/auditLogRepository';
 import { Decimal } from '@prisma/client/runtime/library';
@@ -63,7 +63,7 @@ export class SubmissionService {
   }
 
   async submitSubmission(id: string) {
-    const submission = await submissionRepo.updateStatus(id, 'SUBMITTED');
+    const submission = await submissionRepo.updateStatus(id, SubmissionStatus.SUBMITTED);
     
     // Log the submission
     await auditLogRepo.create({
@@ -78,7 +78,7 @@ export class SubmissionService {
   }
 
   async approveSubmission(id: string) {
-    const submission = await submissionRepo.updateStatus(id, 'APPROVED');
+    const submission = await submissionRepo.updateStatus(id, SubmissionStatus.APPROVED);
     
     // Log the approval
     await auditLogRepo.create({
@@ -93,7 +93,7 @@ export class SubmissionService {
   }
 
   async rejectSubmission(id: string) {
-    const submission = await submissionRepo.updateStatus(id, 'REJECTED');
+    const submission = await submissionRepo.updateStatus(id, SubmissionStatus.REJECTED);
     
     // Log the rejection
     await auditLogRepo.create({
@@ -132,7 +132,7 @@ export class SubmissionService {
   }) {
     const detail = await submissionDetailRepo.create({
       submissionId,
-      submissionType: data.submissionType as any, // Type assertion since we're getting from string
+      submissionType: data.submissionType as SubmissionType, // Type assertion to the proper enum
       submissionValue: new Decimal(data.submissionValue.toString()),
       note: data.note
     });
@@ -186,7 +186,7 @@ export class SubmissionService {
         moduleName: 'Pending',
         actionType: 'RESOLVE_PENDING',
         referenceId: submissionDetail.submissionId,
-        description: `Resolved pending record for submission detail in submission ${submissionDetail.submission.submissionNumber}`,
+        description: `Resolved pending record for submission detail in submission ${submissionDetail.submission.submission.submissionNumber}`,
         createdBy: 'system' // In real app, this would come from auth context
       });
     }
@@ -210,14 +210,14 @@ export class SubmissionService {
     
     // Update submission status accordingly
     if (hasActivePending) {
-      await submissionRepo.updateStatus(submissionId, 'PENDING');
+      await submissionRepo.updateStatus(submissionId, Prisma.SubmissionStatus.PENDING);
     } else {
       // Don't change status if it's already approved/rejected
       const submission = await submissionRepo.findById(submissionId);
       if (submission && !['APPROVED', 'REJECTED'].includes(submission.status)) {
         // If no active pending, but status was PENDING, change to SUBMITTED
-        if (submission.status === 'PENDING') {
-          await submissionRepo.updateStatus(submissionId, 'SUBMITTED');
+        if (submission.status === Prisma.SubmissionStatus.PENDING) {
+          await submissionRepo.updateStatus(submissionId, Prisma.SubmissionStatus.SUBMITTED);
         }
       }
     }

@@ -1,6 +1,9 @@
-import { PrismaClient, SubmissionType } from '@prisma/client';
+import { PrismaClient, SubmissionType as PrismaSubmissionType } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 
 const prisma = new PrismaClient();
+
+export { PrismaSubmissionType as SubmissionType };
 
 export class SubmissionDetailRepository {
   async findAll() {
@@ -8,9 +11,6 @@ export class SubmissionDetailRepository {
       include: {
         submission: true,
         pendingHistories: true
-      },
-      orderBy: {
-        createdAt: 'desc'
       }
     });
   }
@@ -29,30 +29,48 @@ export class SubmissionDetailRepository {
     return await prisma.submissionDetail.findMany({
       where: { submissionId },
       include: {
-        pendingHistories: true
+        submission: true,
+        pendingHistories: {
+          where: {
+            isActive: true
+          }
+        }
       }
     });
   }
 
   async create(data: {
     submissionId: string;
-    submissionType: SubmissionType;
-    submissionValue: number;
+    submissionType: PrismaSubmissionType;
+    submissionValue: Decimal;
     note?: string;
   }) {
     return await prisma.submissionDetail.create({
-      data
+      data: {
+        submissionId: data.submissionId,
+        submissionType: data.submissionType,
+        submissionValue: data.submissionValue,
+        note: data.note
+      },
+      include: {
+        submission: true,
+        pendingHistories: true
+      }
     });
   }
 
   async update(id: string, data: Partial<{
-    submissionType: SubmissionType;
-    submissionValue: number;
-    note: string;
+    submissionType: PrismaSubmissionType;
+    submissionValue: Decimal;
+    note?: string;
   }>) {
     return await prisma.submissionDetail.update({
       where: { id },
-      data
+      data,
+      include: {
+        submission: true,
+        pendingHistories: true
+      }
     });
   }
 

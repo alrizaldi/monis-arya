@@ -7,9 +7,9 @@ export async function GET(request: NextRequest) {
   try {
     const submissions = await submissionService.getAllSubmissions();
     return NextResponse.json(submissions);
-  } catch (error) {
+  } catch (error: any) {
     return NextResponse.json(
-      { error: 'Failed to fetch submissions' }, 
+      { error: error.message || 'Failed to fetch submissions' }, 
       { status: 500 }
     );
   }
