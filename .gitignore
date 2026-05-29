@@ -1,6 +1,7 @@
 node_modules
 # Keep environment variables out of version control
 .env
+.env.local
 .npm-pack-all-tmp
 log
 dist
@@ -8,4 +9,4 @@ dist
 iisnode
 note.txt
 *.log
-.next
+/.next
