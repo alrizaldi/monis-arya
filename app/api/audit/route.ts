@@ -10,9 +10,11 @@ export async function GET(request: NextRequest) {
     const actionType = searchParams.get('actionType');
     const startDateStr = searchParams.get('startDate');
     const endDateStr = searchParams.get('endDate');
-    
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const offset = parseInt(searchParams.get('offset') || '0');
+
     let auditLogs;
-    
+
     if (moduleName) {
       auditLogs = await auditLogRepo.findByModule(moduleName);
     } else if (actionType) {
@@ -20,15 +22,25 @@ export async function GET(request: NextRequest) {
     } else if (startDateStr && endDateStr) {
       const startDate = new Date(startDateStr);
       const endDate = new Date(endDateStr);
+      endDate.setHours(23, 59, 59, 999); // End of the day
+      
       auditLogs = await auditLogRepo.findByDateRange(startDate, endDate);
     } else {
       auditLogs = await auditLogRepo.findAll();
     }
-    
-    return NextResponse.json(auditLogs);
-  } catch (error) {
+
+    // Apply pagination
+    const paginatedLogs = auditLogs.slice(offset, offset + limit);
+
+    return NextResponse.json({
+      data: paginatedLogs,
+      total: auditLogs.length,
+      hasNext: offset + limit < auditLogs.length,
+      hasPrev: offset > 0
+    });
+  } catch (error: any) {
     return NextResponse.json(
-      { error: 'Failed to fetch audit logs' }, 
+      { error: error.message || 'Failed to fetch audit logs' }, 
       { status: 500 }
     );
   }

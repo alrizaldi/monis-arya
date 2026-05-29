@@ -17,6 +17,38 @@ export class AuditLogRepository {
     });
   }
 
+  async findByModule(moduleName: string) {
+    return await prisma.auditLog.findMany({
+      where: { moduleName },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+  }
+
+  async findByAction(actionType: string) {
+    return await prisma.auditLog.findMany({
+      where: { actionType },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+  }
+
+  async findByDateRange(startDate: Date, endDate: Date) {
+    return await prisma.auditLog.findMany({
+      where: {
+        createdAt: {
+          gte: startDate,
+          lte: endDate
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+  }
+
   async create(data: {
     moduleName: string;
     actionType: string;
