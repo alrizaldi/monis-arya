@@ -5,12 +5,12 @@ const submissionService = new SubmissionService();
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { submissionId: string; pendingId: string } }
+  { params }: { params: { id: string; detailId: string } }
 ) {
   try {
     const body = await request.json();
     
-    const pending = await submissionService.addPendingRecord(params.pendingId, {
+    const pending = await submissionService.addPendingRecord(params.detailId, {
       pendingType: body.pendingType,
       pendingNote: body.pendingNote
     });

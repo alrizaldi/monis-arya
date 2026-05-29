@@ -5,6 +5,7 @@ import {
 import { SubmissionDetailRepository } from './repositories/submissionDetailRepository';
 import { PendingHistoryRepository } from './repositories/pendingHistoryRepository';
 import { AuditLogRepository } from './repositories/auditLogRepository';
+import { Decimal } from '@prisma/client/runtime/library';
 
 const submissionRepo = new SubmissionRepository();
 const submissionDetailRepo = new SubmissionDetailRepository();
