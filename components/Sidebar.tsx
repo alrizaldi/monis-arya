@@ -50,16 +50,12 @@ export default function Sidebar() {
         </Button>
       </div>
 
-      {/* Desktop sidebar */}
-      <aside 
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:translate-x-0 transition-transform duration-300 ease-in-out`}
-      >
+      {/* Desktop sidebar - only visible on medium screens and larger */}
+      <aside className="hidden md:block fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg">
         <div className="flex items-center justify-center h-16 border-b">
           <h1 className="text-xl font-bold text-blue-600">Insurance Monitor</h1>
         </div>
-        <nav className="mt-6 px-4">
+        <nav className="mt-6 px-4 h-[calc(100%-6rem)] overflow-y-auto">
           <ul className="space-y-2">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -95,10 +91,58 @@ export default function Sidebar() {
         </nav>
       </aside>
 
+      {/* Mobile sidebar - appears as overlay when toggled */}
+      <aside 
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        } md:hidden transition-transform duration-300 ease-in-out`}
+      >
+        <div className="flex items-center justify-center h-16 border-b">
+          <h1 className="text-xl font-bold text-blue-600">Insurance Monitor</h1>
+        </div>
+        <nav className="mt-6 px-4 h-[calc(100%-6rem)] overflow-y-auto">
+          <ul className="space-y-2">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <li key={item.name}>
+                  <Link href={item.href} onClick={() => setIsOpen(false)}>
+                    <div
+                      className={`flex items-center px-4 py-3 rounded-lg cursor-pointer transition-colors ${
+                        pathname === item.href
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      <Icon className="h-5 w-5 mr-3" />
+                      <span>{item.name}</span>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+          
+          <div className="absolute bottom-0 w-full p-4 border-t">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => {
+                handleSignOut();
+                setIsOpen(false);
+              }}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
+        </nav>
+      </aside>
+
       {/* Overlay for mobile */}
       {isOpen && (
         <div 
-          className="fixed inset-0 z-30 bg-black bg-opacity-50 md:hidden"
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden"
           onClick={toggleSidebar}
         ></div>
       )}
