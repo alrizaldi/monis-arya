@@ -1,4 +1,4 @@
-import { PrismaClient, type Patient } from '@prisma/client';
+import { PrismaClient, type Patient, Gender } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -22,7 +22,7 @@ export class PatientRepository {
   async create(data: {
     medicalRecordNumber: string;
     patientName: string;
-    gender: string;
+    gender: string; // Accepting string and converting to enum
     birthDate: Date;
     createdAt?: Date;
     updatedAt?: Date;
@@ -31,7 +31,7 @@ export class PatientRepository {
       data: {
         medicalRecordNumber: data.medicalRecordNumber,
         patientName: data.patientName,
-        gender: data.gender,
+        gender: data.gender as Gender, // Convert string to enum
         birthDate: data.birthDate,
         createdAt: data.createdAt || new Date(),
         updatedAt: data.updatedAt || new Date()
@@ -42,7 +42,7 @@ export class PatientRepository {
   async update(id: string, data: Partial<{
     medicalRecordNumber: string;
     patientName: string;
-    gender: string;
+    gender: string; // Accepting string and converting to enum
     birthDate: Date;
     updatedAt: Date;
   }>) {
@@ -50,6 +50,7 @@ export class PatientRepository {
       where: { id },
       data: {
         ...data,
+        gender: data.gender ? data.gender as Gender : undefined, // Convert string to enum if provided
         updatedAt: new Date()
       }
     });
