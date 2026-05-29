@@ -3,13 +3,19 @@ import { PrismaClient, type Patient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export class PatientRepository {
-  async findAll(): Promise<Patient[]> {
+  async findAll() {
     return await prisma.patient.findMany();
   }
 
-  async findById(id: string): Promise<Patient | null> {
+  async findById(id: string) {
     return await prisma.patient.findUnique({
       where: { id }
+    });
+  }
+
+  async findByMedicalRecordNumber(medicalRecordNumber: string) {
+    return await prisma.patient.findUnique({
+      where: { medicalRecordNumber }
     });
   }
 
@@ -20,7 +26,7 @@ export class PatientRepository {
     birthDate: Date;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Promise<Patient> {
+  }) {
     return await prisma.patient.create({
       data: {
         medicalRecordNumber: data.medicalRecordNumber,
@@ -39,7 +45,7 @@ export class PatientRepository {
     gender: string;
     birthDate: Date;
     updatedAt: Date;
-  }>): Promise<Patient> {
+  }>) {
     return await prisma.patient.update({
       where: { id },
       data: {
@@ -49,7 +55,7 @@ export class PatientRepository {
     });
   }
 
-  async delete(id: string): Promise<Patient> {
+  async delete(id: string) {
     return await prisma.patient.delete({
       where: { id }
     });
