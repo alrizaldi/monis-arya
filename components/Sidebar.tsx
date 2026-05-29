@@ -51,11 +51,11 @@ export default function Sidebar() {
       </div>
 
       {/* Desktop sidebar - only visible on medium screens and larger */}
-      <aside className="hidden md:block fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg">
+      <aside className="hidden md:block fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg flex flex-col">
         <div className="flex items-center justify-center h-16 border-b">
           <h1 className="text-xl font-bold text-blue-600">Insurance Monitor</h1>
         </div>
-        <nav className="mt-6 px-4 h-[calc(100%-6rem)] overflow-y-auto">
+        <nav className="flex-1 overflow-y-auto py-4 px-4">
           <ul className="space-y-2">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -77,30 +77,30 @@ export default function Sidebar() {
               );
             })}
           </ul>
-          
-          <div className="absolute bottom-0 w-full p-4 border-t">
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={handleSignOut}
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
-          </div>
         </nav>
+        
+        <div className="p-4 border-t mt-auto">
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
+        </div>
       </aside>
 
       {/* Mobile sidebar - appears as overlay when toggled */}
       <aside 
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:hidden transition-transform duration-300 ease-in-out`}
+        } md:hidden transition-transform duration-300 ease-in-out flex flex-col`}
       >
         <div className="flex items-center justify-center h-16 border-b">
           <h1 className="text-xl font-bold text-blue-600">Insurance Monitor</h1>
         </div>
-        <nav className="mt-6 px-4 h-[calc(100%-6rem)] overflow-y-auto">
+        <nav className="flex-1 overflow-y-auto py-4 px-4">
           <ul className="space-y-2">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -122,21 +122,21 @@ export default function Sidebar() {
               );
             })}
           </ul>
-          
-          <div className="absolute bottom-0 w-full p-4 border-t">
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => {
-                handleSignOut();
-                setIsOpen(false);
-              }}
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
-          </div>
         </nav>
+        
+        <div className="p-4 border-t mt-auto">
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => {
+              handleSignOut();
+              setIsOpen(false);
+            }}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
+        </div>
       </aside>
 
       {/* Overlay for mobile */}
