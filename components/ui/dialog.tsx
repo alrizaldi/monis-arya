@@ -15,14 +15,6 @@ const DialogPortal = DialogPrimitive.Portal;
 // Close component
 const DialogClose = DialogPrimitive.Close;
 
-const Dialog = DialogPrimitive.Root;
-
-const DialogTrigger = DialogPrimitive.Trigger;
-
-const DialogPortal = DialogPrimitive.Portal;
-
-const DialogClose = DialogPrimitive.Close;
-
 // Overlay component
 const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
@@ -129,7 +121,6 @@ export {
   DialogPortal,
   DialogOverlay,
   DialogTrigger,
-  DialogClose,
   DialogContent,
   DialogHeader,
   DialogFooter,
