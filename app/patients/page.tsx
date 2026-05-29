@@ -25,6 +25,7 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { PatientService } from '@/services/patientService';
 
 // Define schema for patient form validation
 const patientSchema = z.object({
@@ -36,51 +37,110 @@ const patientSchema = z.object({
 
 type PatientFormValues = z.infer<typeof patientSchema>;
 
-// Mock data for demonstration
-const mockPatients = [
-  { id: '1', medicalRecordNumber: 'MR-001', patientName: 'John Doe', gender: 'Male', birthDate: '1985-05-15' },
-  { id: '2', medicalRecordNumber: 'MR-002', patientName: 'Jane Smith', gender: 'Female', birthDate: '1990-08-22' },
-  { id: '3', medicalRecordNumber: 'MR-003', patientName: 'Robert Johnson', gender: 'Male', birthDate: '1978-12-03' },
-];
+// Define Patient type
+type Patient = {
+  id: string;
+  medicalRecordNumber: string;
+  patientName: string;
+  gender: string;
+  birthDate: Date;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 export default function PatientsPage() {
-  const [patients, setPatients] = useState(mockPatients);
+  const [patients, setPatients] = useState<Patient[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingPatient, setEditingPatient] = useState<any>(null);
+  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const [loading, setLoading] = useState(true);
   
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<PatientFormValues>({
+  const patientService = new PatientService();
+  
+  const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<PatientFormValues>({
     resolver: zodResolver(patientSchema),
   });
 
-  const onSubmit = (data: PatientFormValues) => {
-    if (editingPatient) {
-      // Update existing patient
-      setPatients(patients.map(p => 
-        p.id === editingPatient.id ? { ...p, ...data } : p
-      ));
-    } else {
-      // Add new patient
-      const newPatient = {
-        id: (patients.length + 1).toString(),
-        ...data
-      };
-      setPatients([...patients, newPatient]);
+  // Load patients from database
+  useEffect(() => {
+    const loadPatients = async () => {
+      try {
+        const data = await patientService.getAllPatients();
+        setPatients(data);
+      } catch (error) {
+        console.error('Error loading patients:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPatients();
+  }, []);
+
+  const onSubmit = async (data: PatientFormValues) => {
+    try {
+      if (editingPatient) {
+        // Update existing patient
+        const updatedPatient = await patientService.updatePatient(editingPatient.id, {
+          medicalRecordNumber: data.medicalRecordNumber,
+          patientName: data.patientName,
+          gender: data.gender,
+          birthDate: new Date(data.birthDate),
+        });
+        
+        setPatients(patients.map(p => 
+          p.id === editingPatient.id ? updatedPatient : p
+        ));
+      } else {
+        // Add new patient
+        const newPatient = await patientService.createPatient({
+          medicalRecordNumber: data.medicalRecordNumber,
+          patientName: data.patientName,
+          gender: data.gender,
+          birthDate: new Date(data.birthDate),
+        });
+        
+        setPatients([...patients, newPatient]);
+      }
+      
+      reset();
+      setIsDialogOpen(false);
+      setEditingPatient(null);
+    } catch (error) {
+      console.error('Error saving patient:', error);
+      alert(error instanceof Error ? error.message : 'An error occurred while saving the patient');
     }
-    
-    reset();
-    setIsDialogOpen(false);
-    setEditingPatient(null);
   };
 
-  const handleEdit = (patient: any) => {
+  const handleEdit = (patient: Patient) => {
     setEditingPatient(patient);
-    reset(patient);
+    setValue('medicalRecordNumber', patient.medicalRecordNumber);
+    setValue('patientName', patient.patientName);
+    setValue('gender', patient.gender);
+    setValue('birthDate', new Date(patient.birthDate).toISOString().split('T')[0]); // Format date as YYYY-MM-DD
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setPatients(patients.filter(p => p.id !== id));
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this patient?')) {
+      try {
+        await patientService.deletePatient(id);
+        setPatients(patients.filter(p => p.id !== id));
+      } catch (error) {
+        console.error('Error deleting patient:', error);
+        alert('An error occurred while deleting the patient');
+      }
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-center h-screen">
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -223,6 +283,13 @@ export default function PatientsPage() {
                 </TableCell>
               </TableRow>
             ))}
+            {patients.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                  No patients found
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
