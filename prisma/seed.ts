@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, SubmissionStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 const prisma = new PrismaClient();
@@ -6,179 +6,144 @@ const prisma = new PrismaClient();
 async function main() {
   // Create sample patients
   const patient1 = await prisma.patient.upsert({
-    where: { medicalRecordNumber: 'MR-001' },
+    where: { id: 'pat-001' },
     update: {},
     create: {
-      medicalRecordNumber: 'MR-001',
-      patientName: 'John Doe',
-      gender: 'Male',
-      birthDate: new Date('1985-05-15'),
+      id: 'pat-001',
+      medicalRecordNumber: 'MRN-001',
+      firstName: 'John',
+      lastName: 'Doe',
+      dateOfBirth: new Date('1985-05-15'),
+      gender: 'MALE',
+      phone: '+1234567890',
+      email: 'john.doe@example.com',
+      address: '123 Main St, New York, NY'
     },
   });
 
   const patient2 = await prisma.patient.upsert({
-    where: { medicalRecordNumber: 'MR-002' },
+    where: { id: 'pat-002' },
     update: {},
     create: {
-      medicalRecordNumber: 'MR-002',
-      patientName: 'Jane Smith',
-      gender: 'Female',
-      birthDate: new Date('1990-08-22'),
-    },
-  });
-
-  const patient3 = await prisma.patient.upsert({
-    where: { medicalRecordNumber: 'MR-003' },
-    update: {},
-    create: {
-      medicalRecordNumber: 'MR-003',
-      patientName: 'Robert Johnson',
-      gender: 'Male',
-      birthDate: new Date('1978-12-03'),
+      id: 'pat-002',
+      medicalRecordNumber: 'MRN-002',
+      firstName: 'Jane',
+      lastName: 'Smith',
+      dateOfBirth: new Date('1990-08-22'),
+      gender: 'FEMALE',
+      phone: '+1987654321',
+      email: 'jane.smith@example.com',
+      address: '456 Oak Ave, Los Angeles, CA'
     },
   });
 
   // Create sample rooms
   const room1 = await prisma.room.upsert({
-    where: { roomNumber: '101' },
+    where: { id: 'room-001' },
     update: {},
     create: {
+      id: 'room-001',
       roomNumber: '101',
-      bedNumber: 1,
-      roomClass: 'VIP',
+      bedNumber: 'A1',
+      roomClass: 'VIP'
     },
   });
 
   const room2 = await prisma.room.upsert({
-    where: { roomNumber: '102' },
+    where: { id: 'room-002' },
     update: {},
     create: {
+      id: 'room-002',
       roomNumber: '102',
-      bedNumber: 2,
-      roomClass: 'Regular',
-    },
-  });
-
-  const room3 = await prisma.room.upsert({
-    where: { roomNumber: '201' },
-    update: {},
-    create: {
-      roomNumber: '201',
-      bedNumber: 1,
-      roomClass: 'ICU',
+      bedNumber: 'A2',
+      roomClass: 'GENERAL'
     },
   });
 
   // Create sample payers
   const payer1 = await prisma.payer.upsert({
-    where: { payerName: 'BPJS Kesehatan' },
+    where: { id: 'pay-001' },
     update: {},
     create: {
-      payerName: 'BPJS Kesehatan',
+      id: 'pay-001',
+      payerCode: 'AETNA',
+      payerName: 'Aetna Health Insurance',
+      contactPerson: 'Michael Johnson',
+      phone: '+1555123456',
+      email: 'contact@aetna.com',
+      address: '789 Insurance Blvd, Hartford, CT'
     },
   });
 
   const payer2 = await prisma.payer.upsert({
-    where: { payerName: 'Asuransi Swasta A' },
+    where: { id: 'pay-002' },
     update: {},
     create: {
-      payerName: 'Asuransi Swasta A',
-    },
-  });
-
-  const payer3 = await prisma.payer.upsert({
-    where: { payerName: 'Asuransi Swasta B' },
-    update: {},
-    create: {
-      payerName: 'Asuransi Swasta B',
+      id: 'pay-002',
+      payerCode: 'CIGNA',
+      payerName: 'Cigna Healthcare',
+      contactPerson: 'Sarah Williams',
+      phone: '+1555987654',
+      email: 'info@cigna.com',
+      address: '321 Health St, Bloomfield, CT'
     },
   });
 
   // Create sample submissions
   const submission1 = await prisma.submission.upsert({
-    where: { submissionNumber: 'SUB-001' },
+    where: { id: 'sub-001' },
     update: {},
     create: {
+      id: 'sub-001',
       submissionNumber: 'SUB-001',
       patientId: patient1.id,
       roomId: room1.id,
       payerId: payer1.id,
-      status: 'APPROVED',
-      submittedAt: new Date('2023-05-01T10:00:00Z'),
-      approvedAt: new Date('2023-05-01T14:00:00Z'),
+      status: 'SUBMITTED' as SubmissionStatus,
     },
   });
 
   const submission2 = await prisma.submission.upsert({
-    where: { submissionNumber: 'SUB-002' },
+    where: { id: 'sub-002' },
     update: {},
     create: {
+      id: 'sub-002',
       submissionNumber: 'SUB-002',
       patientId: patient2.id,
       roomId: room2.id,
       payerId: payer2.id,
-      status: 'PENDING',
-      submittedAt: new Date('2023-05-02T09:00:00Z'),
+      status: 'DRAFT' as SubmissionStatus,
     },
   });
 
-  const submission3 = await prisma.submission.upsert({
-    where: { submissionNumber: 'SUB-003' },
-    update: {},
-    create: {
-      submissionNumber: 'SUB-003',
-      patientId: patient3.id,
-      roomId: room3.id,
-      payerId: payer1.id,
-      status: 'REJECTED',
-      submittedAt: new Date('2023-05-03T11:00:00Z'),
-      rejectedAt: new Date('2023-05-03T16:00:00Z'),
-    },
-  });
-
-  // Create sample submission details
+  // Create sample submission details for submission1
   const detail1 = await prisma.submissionDetail.create({
     data: {
+      id: 'sd-001',
       submissionId: submission1.id,
-      submissionType: 'ROOM',
-      submissionValue: new Decimal('1500000'),
-      note: 'VIP room charge for 3 days'
+      submissionType: 'ROOM_CHARGE',
+      submissionValue: new Decimal(1500.00),
+      note: 'Standard room charge for 3 days'
     }
   });
 
   const detail2 = await prisma.submissionDetail.create({
     data: {
+      id: 'sd-002',
       submissionId: submission1.id,
       submissionType: 'MEDICINE',
-      submissionValue: new Decimal('250000'),
-      note: 'Prescription medications'
+      submissionValue: new Decimal(250.50),
+      note: 'Prescription medication'
     }
   });
 
   const detail3 = await prisma.submissionDetail.create({
     data: {
+      id: 'sd-003',
       submissionId: submission1.id,
       submissionType: 'LAB',
-      submissionValue: new Decimal('300000'),
-      note: 'Complete blood count test'
-    }
-  });
-
-  const detail4 = await prisma.submissionDetail.create({
-    data: {
-      submissionId: submission2.id,
-      submissionType: 'PROCEDURE',
-      submissionValue: new Decimal('5000000'),
-      note: 'MRI scan'
-    }
-  });
-
-  const detail5 = await prisma.submissionDetail.create({
-    data: {
-      submissionId: submission2.id,
-      submissionType: 'MEDICINE',
-      submissionValue: new Decimal('180000'),
-      note: 'Post-procedure medications'
+      submissionValue: new Decimal(300.75),
+      note: 'Blood test lab work'
     }
   });
 
@@ -194,70 +159,52 @@ async function main() {
   });
 
   // Create audit logs
-  await prisma.auditLog.create({
-    data: {
-      moduleName: 'Submissions',
-      actionType: 'CREATE_SUBMISSION',
-      referenceId: submission1.id,
-      description: `Created new submission ${submission1.submissionNumber} for patient ${patient1.patientName}`,
-      createdBy: 'seed-script'
-    }
+  await prisma.auditLog.createMany({
+    data: [
+      {
+        id: 'al-001',
+        moduleName: 'Patients',
+        actionType: 'CREATE_PATIENT',
+        referenceId: patient1.id,
+        description: `Created patient ${patient1.firstName} ${patient1.lastName}`,
+        createdBy: 'system'
+      },
+      {
+        id: 'al-002',
+        moduleName: 'Rooms',
+        actionType: 'CREATE_ROOM',
+        referenceId: room1.id,
+        description: `Created room ${room1.roomNumber}`,
+        createdBy: 'system'
+      },
+      {
+        id: 'al-003',
+        moduleName: 'Submissions',
+        actionType: 'CREATE_SUBMISSION',
+        referenceId: submission1.id,
+        description: `Created submission ${submission1.submissionNumber}`,
+        createdBy: 'system'
+      },
+      {
+        id: 'al-004',
+        moduleName: 'Pending',
+        actionType: 'ADD_PENDING',
+        referenceId: detail1.id,
+        description: `Added pending record for detail in submission ${submission1.submissionNumber}`,
+        createdBy: 'system'
+      },
+      {
+        id: 'al-005',
+        moduleName: 'Pending',
+        actionType: 'RESOLVE_PENDING',
+        referenceId: detail2.id,
+        description: `Resolved pending record for detail in submission ${submission1.submissionNumber}`,
+        createdBy: 'system'
+      }
+    ]
   });
 
-  await prisma.auditLog.create({
-    data: {
-      moduleName: 'Submissions',
-      actionType: 'SUBMIT_SUBMISSION',
-      referenceId: submission1.id,
-      description: `Submitted submission ${submission1.submissionNumber}`,
-      createdBy: 'seed-script'
-    }
-  });
-
-  await prisma.auditLog.create({
-    data: {
-      moduleName: 'Submissions',
-      actionType: 'APPROVE_SUBMISSION',
-      referenceId: submission1.id,
-      description: `Approved submission ${submission1.submissionNumber}`,
-      createdBy: 'seed-script'
-    }
-  });
-
-  await prisma.auditLog.create({
-    data: {
-      moduleName: 'Submissions',
-      actionType: 'CREATE_SUBMISSION',
-      referenceId: submission2.id,
-      description: `Created new submission ${submission2.submissionNumber} for patient ${patient2.patientName}`,
-      createdBy: 'seed-script'
-    }
-  });
-
-  await prisma.auditLog.create({
-    data: {
-      moduleName: 'Pending',
-      actionType: 'ADD_PENDING',
-      referenceId: submission2.id,
-      description: `Added pending record for procedure authorization`,
-      createdBy: 'seed-script'
-    }
-  });
-
-  console.log({
-    patient1: patient1,
-    patient2: patient2,
-    patient3: patient3,
-    room1: room1,
-    room2: room2,
-    room3: room3,
-    payer1: payer1,
-    payer2: payer2,
-    payer3: payer3,
-    submission1: submission1,
-    submission2: submission2,
-    submission3: submission3,
-  });
+  console.log('Seed data created successfully');
 }
 
 main()
