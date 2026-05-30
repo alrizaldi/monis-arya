@@ -41,6 +41,9 @@ enum PendingType {
   SYSTEM_ERROR
   INSURANCE_REVIEW
   OTHER
+  LML
+  CL_KONSUL
+  CL_MONITORING_HARIAN
 }
 
 model Patient {
@@ -104,8 +107,11 @@ model SubmissionDetail {
   id              String            @id @default(uuid())
   submissionId    String
   submissionType  SubmissionType
-  submissionValue Decimal
+  pengajuan       String            // Renamed from submissionValue
   note            String?
+  status          String?
+  approvedAt      DateTime?
+  rejectedAt      DateTime?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   
@@ -119,9 +125,10 @@ model SubmissionDetail {
 model PendingHistory {
   id                String   @id @default(uuid())
   submissionDetailId String
-  pendingType       PendingType
+  pendingType       String?
   pendingNote       String?
   createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
   resolvedAt        DateTime?
   isActive          Boolean  @default(true)
   

@@ -12,7 +12,7 @@ export async function POST(
     
     const detail = await submissionService.addSubmissionDetail(params.id, {
       submissionType: body.submissionType,
-      submissionValue: body.submissionValue,
+      pengajuan: body.pengajuan, // Using renamed field
       note: body.note
     });
     

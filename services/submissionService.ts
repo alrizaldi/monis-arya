@@ -196,18 +196,104 @@ export class SubmissionService {
 
   async addSubmissionDetail(submissionId: string, data: {
     submissionType: string;
-    submissionValue: number;
+    pengajuan: string; // Renamed from submissionValue
     note?: string;
   }) {
     const detail = await submissionDetailRepo.create({
       submissionId,
-      submissionType: data.submissionType, // Pass the string directly, repository handles conversion
-      submissionValue: new Decimal(data.submissionValue.toString()),
+      submissionType: data.submissionType,
+      pengajuan: data.pengajuan, // Renamed field
       note: data.note
     });
     
     // Check if submission should be marked as PENDING due to active pending records
     await this._updateSubmissionStatusBasedOnPending(submissionId);
+    
+    return detail;
+  }
+
+  async getSubmissionDetailById(id: string) {
+    return await submissionDetailRepo.findById(id);
+  }
+
+  async updateSubmissionDetail(id: string, data: Partial<{
+    submissionType: string;
+    pengajuan: string; // Renamed from submissionValue
+    note?: string;
+  }>) {
+    const detail = await submissionDetailRepo.update(id, {
+      submissionType: data.submissionType,
+      pengajuan: data.pengajuan, // Renamed field
+      note: data.note
+    });
+    
+    // Check if submission should be marked as PENDING due to active pending records
+    if (detail) {
+      await this._updateSubmissionStatusBasedOnPending(detail.submissionId);
+    }
+    
+    return detail;
+  }
+
+  async deleteSubmissionDetail(id: string) {
+    const detail = await submissionDetailRepo.findById(id);
+    if (!detail) {
+      throw new Error('Submission detail not found');
+    }
+    
+    await submissionDetailRepo.delete(id);
+    
+    // Check if submission should be marked as PENDING due to active pending records
+    await this._updateSubmissionStatusBasedOnPending(detail.submissionId);
+    
+    // Log the deletion
+    await auditLogRepo.create({
+      moduleName: 'Submissions',
+      actionType: 'DELETE_SUBMISSION_DETAIL',
+      referenceId: detail.submissionId,
+      description: `Deleted submission detail from submission`,
+      createdBy: 'system' // In real app, this would come from auth context
+    });
+  }
+
+  async approveSubmissionDetail(detailId: string) {
+    const detail = await submissionDetailRepo.update(detailId, {
+      status: 'APPROVED',
+      approvedAt: new Date()
+    });
+    
+    // Update submission status based on all details
+    await this._updateSubmissionStatusBasedOnDetails(detail!.submissionId);
+    
+    // Log the approval
+    await auditLogRepo.create({
+      moduleName: 'Submissions',
+      actionType: 'APPROVE_SUBMISSION_DETAIL',
+      referenceId: detailId,
+      description: `Approved submission detail`,
+      createdBy: 'system' // In real app, this would come from auth context
+    });
+    
+    return detail;
+  }
+
+  async rejectSubmissionDetail(detailId: string) {
+    const detail = await submissionDetailRepo.update(detailId, {
+      status: 'REJECTED',
+      rejectedAt: new Date()
+    });
+    
+    // Update submission status based on all details
+    await this._updateSubmissionStatusBasedOnDetails(detail!.submissionId);
+    
+    // Log the rejection
+    await auditLogRepo.create({
+      moduleName: 'Submissions',
+      actionType: 'REJECT_SUBMISSION_DETAIL',
+      referenceId: detailId,
+      description: `Rejected submission detail`,
+      createdBy: 'system' // In real app, this would come from auth context
+    });
     
     return detail;
   }
@@ -290,5 +376,42 @@ export class SubmissionService {
         }
       }
     }
+  }
+
+  private async _updateSubmissionStatusBasedOnDetails(submissionId: string) {
+    // Get all details for this submission
+    const details = await submissionDetailRepo.findBySubmissionId(submissionId);
+    
+    // Check if any detail has active pending records
+    let hasActivePending = false;
+    let hasUnapproved = false;
+    
+    for (const detail of details) {
+      const activePending = detail.pendingHistories.filter(ph => ph.isActive);
+      if (activePending.length > 0) {
+        hasActivePending = true;
+        break;
+      }
+      
+      // Check if detail is not approved
+      if (detail.status !== 'APPROVED') {
+        hasUnapproved = true;
+      }
+    }
+    
+    // Determine overall submission status
+    let newStatus: SubmissionStatus;
+    if (hasActivePending) {
+      newStatus = SubmissionStatus.PENDING;
+    } else if (hasUnapproved) {
+      // If there are unapproved details but no pending, submission is still submitted for review
+      newStatus = SubmissionStatus.SUBMITTED;
+    } else {
+      // All details approved
+      newStatus = SubmissionStatus.APPROVED;
+    }
+    
+    // Update submission status
+    await submissionRepo.updateStatus(submissionId, newStatus);
   }
 }

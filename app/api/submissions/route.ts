@@ -13,11 +13,12 @@ export async function GET(request: NextRequest) {
     const payerName = url.searchParams.get('payerName') || '';
     const status = url.searchParams.get('status') || '';
 
+
     const filters = {
-      submissionNumber: submissionNumber || undefined,
-      patientName: patientName || undefined,
-      payerName: payerName || undefined,
-      status: status || undefined,
+      submissionNumber: submissionNumber.trim() || undefined,
+      patientName: patientName.trim() || undefined,
+      payerName: payerName.trim() || undefined,
+      status: status.trim() || undefined,
     };
 
     const result = await submissionService.getSubmissionsWithPagination({
@@ -26,8 +27,10 @@ export async function GET(request: NextRequest) {
       filters,
     });
 
+
     return NextResponse.json(result);
   } catch (error: any) {
+    console.error('Error in GET /api/submissions:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch submissions' }, 
       { status: 500 }

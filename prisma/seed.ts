@@ -122,8 +122,9 @@ async function main() {
       id: 'sd-001',
       submissionId: submission1.id,
       submissionType: SubmissionType.ROOM,
-      submissionValue: new Decimal(1500.00),
+      pengajuan: 'Rp 1,500,000',
       note: 'Standard room charge for 3 days',
+      status: 'SUBMITTED',
       createdAt: new Date(),
       updatedAt: new Date()
     }
@@ -134,8 +135,9 @@ async function main() {
       id: 'sd-002',
       submissionId: submission1.id,
       submissionType: SubmissionType.MEDICINE,
-      submissionValue: new Decimal(250.50),
+      pengajuan: 'Rp 250,500',
       note: 'Prescription medication',
+      status: 'SUBMITTED',
       createdAt: new Date(),
       updatedAt: new Date()
     }
@@ -146,8 +148,9 @@ async function main() {
       id: 'sd-003',
       submissionId: submission1.id,
       submissionType: SubmissionType.LAB,
-      submissionValue: new Decimal(300.75),
+      pengajuan: 'Rp 300,750',
       note: 'Blood test lab work',
+      status: 'SUBMITTED',
       createdAt: new Date(),
       updatedAt: new Date()
     }

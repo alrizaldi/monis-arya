@@ -17,13 +17,11 @@ export class SubmissionRepository {
         patient: true,
         room: true,
         payer: true,
+        note: true, // Include note field
+        submittedBy: true, // Include submittedBy field
         details: {
           include: {
-            pendingHistories: {
-              where: {
-                isActive: true
-              }
-            }
+            pendingHistories: true // Show all pending histories, both active and inactive
           }
         }
       }
@@ -41,11 +39,7 @@ export class SubmissionRepository {
         payer: true,
         details: {
           include: {
-            pendingHistories: {
-              where: {
-                isActive: true
-              }
-            }
+            pendingHistories: true // Show all pending histories, both active and inactive
           }
         }
       },
@@ -75,11 +69,7 @@ export class SubmissionRepository {
         payer: true,
         details: {
           include: {
-            pendingHistories: {
-              where: {
-                isActive: true
-              }
-            }
+            pendingHistories: true // Show all pending histories, both active and inactive
           }
         }
       }

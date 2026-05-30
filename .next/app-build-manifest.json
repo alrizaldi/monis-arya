@@ -1,14 +1,14 @@
 {
   "pages": {
-    "/pending/page": [
+    "/submissions/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/pending/page.js"
+      "static/chunks/app/submissions/page.js"
     ],
-    "/pending/layout": [
+    "/submissions/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/pending/layout.js"
+      "static/chunks/app/submissions/layout.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",
@@ -31,30 +31,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/layout.js"
     ],
-    "/submissions/page": [
+    "/patients/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/submissions/page.js"
+      "static/chunks/app/patients/page.js"
     ],
-    "/submissions/layout": [
+    "/patients/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/submissions/layout.js"
-    ],
-    "/submissions/[id]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/submissions/[id]/page.js"
-    ],
-    "/payers/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/payers/page.js"
-    ],
-    "/payers/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/payers/layout.js"
+      "static/chunks/app/patients/layout.js"
     ],
     "/rooms/page": [
       "static/chunks/webpack.js",
@@ -66,10 +51,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/rooms/layout.js"
     ],
-    "/_not-found/page": [
+    "/payers/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/_not-found/page.js"
+      "static/chunks/app/payers/page.js"
+    ],
+    "/payers/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/payers/layout.js"
+    ],
+    "/submissions/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/submissions/[id]/page.js"
     ]
   }
 }

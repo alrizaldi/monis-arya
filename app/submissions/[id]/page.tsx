@@ -32,7 +32,7 @@ import dayjs from 'dayjs';
 // Define schema for submission detail form validation
 const submissionDetailSchema = z.object({
   submissionType: z.string().min(1, 'Submission Type is required'),
-  submissionValue: z.string().min(1, 'Value is required'), // Changed from number to string
+  pengajuan: z.string().min(1, 'Pengajuan is required'), // Renamed from submissionValue
   note: z.string().optional(),
 });
 
@@ -82,8 +82,11 @@ type Submission = {
   details: Array<{
     id: string;
     submissionType: string;
-    submissionValue: string; // Changed from number to string
+    pengajuan: string; // Renamed from submissionValue
     note?: string;
+    status: string;
+    approvedAt?: Date;
+    rejectedAt?: Date;
     createdAt: Date;
     updatedAt: Date;
     pendingHistories: Array<{
@@ -91,9 +94,9 @@ type Submission = {
       pendingType: string;
       pendingNote?: string;
       isActive: boolean;
-      createdAt: Date;
-      updatedAt: Date;
-      resolvedAt?: Date;
+      createdAt: Date; // Added timestamp
+      updatedAt: Date; // Added timestamp
+      resolvedAt?: Date; // Added timestamp
     }>
   }>;
 };
@@ -161,7 +164,7 @@ export default function SubmissionDetailPage() {
           },
           body: JSON.stringify({
             ...formData,
-            submissionValue: formData.submissionValue // Now sending as string
+            pengajuan: formData.pengajuan // Using renamed field
           })
         });
         
@@ -178,7 +181,7 @@ export default function SubmissionDetailPage() {
           },
           body: JSON.stringify({
             ...formData,
-            submissionValue: formData.submissionValue // Now sending as string
+            pengajuan: formData.pengajuan // Using renamed field
           })
         });
         
@@ -347,6 +350,72 @@ export default function SubmissionDetailPage() {
     }
   };
 
+  const handleApproveDetail = async (detailId: string) => {
+    try {
+      const response = await fetch(`/api/submissions/${id}/details/${detailId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'approve'
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to approve detail');
+      }
+      
+      // Refresh the submission data
+      const refreshResponse = await fetch(`/api/submissions/${id}`);
+      if (!refreshResponse.ok) {
+        throw new Error('Failed to refresh submission');
+      }
+      const refreshedData = await refreshResponse.json();
+      setSubmission(refreshedData);
+      setDetails(refreshedData.details || []);
+      
+      alert('Detail approved!');
+    } catch (error) {
+      console.error("Error approving detail:", error);
+      alert(error instanceof Error ? error.message : "An error occurred while approving the detail");
+    }
+  };
+
+  const handleRejectDetail = async (detailId: string) => {
+    try {
+      const response = await fetch(`/api/submissions/${id}/details/${detailId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'reject'
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to reject detail');
+      }
+      
+      // Refresh the submission data
+      const refreshResponse = await fetch(`/api/submissions/${id}`);
+      if (!refreshResponse.ok) {
+        throw new Error('Failed to refresh submission');
+      }
+      const refreshedData = await refreshResponse.json();
+      setSubmission(refreshedData);
+      setDetails(refreshedData.details || []);
+      
+      alert('Detail rejected!');
+    } catch (error) {
+      console.error("Error rejecting detail:", error);
+      alert(error instanceof Error ? error.message : "An error occurred while rejecting the detail");
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -438,20 +507,13 @@ export default function SubmissionDetailPage() {
       <div className="flex space-x-3 mb-6">
         <Button 
           variant="default" 
-          className="bg-green-600 hover:bg-green-700"
-          onClick={handleApprove}
-          disabled={submission?.status === 'APPROVED' || submission?.status === 'REJECTED'}
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={() => {
+            // Redirect to a summary view or keep as general submission actions
+            alert('Individual details approval is now available in the table. Approve all details to automatically approve the submission.');
+          }}
         >
-          <CheckCircle className="h-4 w-4 mr-2" />
-          Approve Submission
-        </Button>
-        <Button 
-          variant="destructive"
-          onClick={handleReject}
-          disabled={submission?.status === 'APPROVED' || submission?.status === 'REJECTED'}
-        >
-          <XCircle className="h-4 w-4 mr-2" />
-          Reject Submission
+          View Approval Status
         </Button>
         <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
           <DialogTrigger asChild>
@@ -468,7 +530,7 @@ export default function SubmissionDetailPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>{editingDetail ? 'Edit Detail' : 'Add New Detail'}</DialogTitle>
+              <DialogTitle>{editingDetail ? 'Edit Detail' : 'Add New Detail'} </DialogTitle>
               <DialogDescription>
                 {editingDetail 
                   ? 'Update submission detail information' 
@@ -501,18 +563,18 @@ export default function SubmissionDetailPage() {
                 </div>
                 
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="submissionValue" className="text-right">
-                    Value
+                  <Label htmlFor="pengajuan" className="text-right">
+                    Pengajuan
                   </Label>
-                  <Input
-                    id="submissionValue"
-                    type="text"
-                    className="col-span-3"
-                    {...registerDetail('submissionValue')}
+                  <textarea // Changed from Input to textarea to match note field
+                    id="pengajuan"
+                    className="col-span-3 border rounded-md px-3 py-2"
+                    rows={3} // Same as note field
+                    {...registerDetail('pengajuan')}
                   />
-                  {detailErrors.submissionValue && (
+                  {detailErrors.pengajuan && (
                     <p className="col-start-2 col-span-3 text-red-500 text-sm">
-                      {detailErrors.submissionValue.message}
+                      {detailErrors.pengajuan.message}
                     </p>
                   )}
                 </div>
@@ -545,8 +607,10 @@ export default function SubmissionDetailPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Type</TableHead>
-              <TableHead>Value</TableHead>
+              <TableHead>Pengajuan</TableHead> {/* Renamed from Value */}
               <TableHead>Note</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Created At</TableHead> {/* Added column for created time */}
               <TableHead>Pending Records</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -555,8 +619,23 @@ export default function SubmissionDetailPage() {
             {details.map((detail) => (
               <TableRow key={detail.id}>
                 <TableCell className="font-medium">{detail.submissionType}</TableCell>
-                <TableCell>{detail.submissionValue}</TableCell>
+                <TableCell className="text-lg font-semibold text-gray-900">{detail.pengajuan}</TableCell> {/* Using pengajuan */}
                 <TableCell>{detail.note}</TableCell>
+                <TableCell>
+                  <Badge 
+                    className={`${
+                      detail.status === 'APPROVED' ? 'bg-green-500' : 
+                      detail.status === 'PENDING' ? 'bg-yellow-500' : 
+                      detail.status === 'REJECTED' ? 'bg-red-500' : 
+                      'bg-gray-500'
+                    }`}
+                  >
+                    {detail.status || 'DRAFT'}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  {dayjs(detail.createdAt).format('MMM DD, YYYY HH:mm')}
+                </TableCell>
                 <TableCell>
                   {detail.pendingHistories.length > 0 ? (
                     <div className="space-y-1">
@@ -571,8 +650,8 @@ export default function SubmissionDetailPage() {
                             <p className="text-sm font-medium">{pending.pendingType}</p>
                             <p className="text-xs text-gray-500">{pending.pendingNote}</p>
                             <p className="text-xs text-gray-400">
-                              {dayjs(pending.createdAt).format('MMM DD, YYYY')} 
-                              {pending.resolvedAt && ` - Resolved: ${dayjs(pending.resolvedAt).format('MMM DD, YYYY')}`}
+                              Created: {dayjs(pending.createdAt).format('MMM DD, YYYY HH:mm')} 
+                              {pending.resolvedAt && ` | Resolved: ${dayjs(pending.resolvedAt).format('MMM DD, YYYY HH:mm')}`}
                             </p>
                           </div>
                           {pending.isActive && (
@@ -592,14 +671,36 @@ export default function SubmissionDetailPage() {
                   )}
                 </TableCell>
                 <TableCell>
-                  <div className="flex space-x-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleAddPending(detail)}
-                    >
-                      <Clock className="h-4 w-4" />
-                    </Button>
+                  <div className="flex flex-col space-y-2">
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleAddPending(detail)}
+                      >
+                        <Clock className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex space-x-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="bg-green-100 hover:bg-green-200 text-green-800"
+                        onClick={() => handleApproveDetail(detail.id)}
+                        disabled={detail.status === 'APPROVED'}
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="bg-red-100 hover:bg-red-200 text-red-800"
+                        onClick={() => handleRejectDetail(detail.id)}
+                        disabled={detail.status === 'REJECTED'}
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </TableCell>
               </TableRow>

@@ -227,18 +227,12 @@ export default function SubmissionsPage() {
           limit: pagination.limit.toString(),
         });
         
-        if (filters.submissionNumber) {
-          queryParams.append('submissionNumber', filters.submissionNumber);
-        }
-        if (filters.patientName) {
-          queryParams.append('patientName', filters.patientName);
-        }
-        if (filters.payerName) {
-          queryParams.append('payerName', filters.payerName);
-        }
-        if (filters.status) {
-          queryParams.append('status', filters.status);
-        }
+        // Only append filters if they have values
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value && value.trim() !== '') {
+            queryParams.append(key, value);
+          }
+        });
 
         const response = await fetch(`/api/submissions?${queryParams}`);
         if (!response.ok) {
@@ -333,18 +327,12 @@ export default function SubmissionsPage() {
           limit: pagination.limit.toString(),
         });
         
-        if (filters.submissionNumber) {
-          queryParams.append('submissionNumber', filters.submissionNumber);
-        }
-        if (filters.patientName) {
-          queryParams.append('patientName', filters.patientName);
-        }
-        if (filters.payerName) {
-          queryParams.append('payerName', filters.payerName);
-        }
-        if (filters.status) {
-          queryParams.append('status', filters.status);
-        }
+        // Only append filters if they have values
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value && value.trim() !== '') {
+            queryParams.append(key, value);
+          }
+        });
 
         const refreshResponse = await fetch(`/api/submissions?${queryParams}`);
         if (!refreshResponse.ok) {
@@ -727,7 +715,7 @@ export default function SubmissionsPage() {
                   colSpan={8}
                   className="text-center py-8 text-gray-500"
                 >
-                  No submissions found
+                  {loading ? 'Loading...' : 'No submissions found'}
                 </TableCell>
               </TableRow>
             )}
