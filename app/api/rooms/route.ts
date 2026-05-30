@@ -5,8 +5,27 @@ const roomService = new RoomService();
 
 export async function GET(request: NextRequest) {
   try {
-    const rooms = await roomService.getAllRooms();
-    return NextResponse.json(rooms);
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const limit = parseInt(url.searchParams.get('limit') || '10');
+    const roomNumber = url.searchParams.get('roomNumber') || '';
+    const roomClass = url.searchParams.get('roomClass') || '';
+    const bedNumberStr = url.searchParams.get('bedNumber') || '';
+    const bedNumber = bedNumberStr ? parseInt(bedNumberStr) : undefined;
+
+    const filters = {
+      roomNumber: roomNumber || undefined,
+      roomClass: roomClass || undefined,
+      bedNumber: bedNumber,
+    };
+
+    const result = await roomService.getRoomsWithPagination({
+      page,
+      limit,
+      filters,
+    });
+
+    return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to fetch rooms' }, 

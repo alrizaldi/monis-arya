@@ -7,6 +7,23 @@ export class PatientRepository {
     return await prisma.patient.findMany();
   }
 
+  async findWithPagination(skip: number, limit: number, whereClause: any = {}) {
+    return await prisma.patient.findMany({
+      skip,
+      take: limit,
+      where: whereClause,
+      orderBy: {
+        createdAt: 'desc', // Sort by creation date descending by default
+      },
+    });
+  }
+
+  async count(whereClause: any = {}) {
+    return await prisma.patient.count({
+      where: whereClause,
+    });
+  }
+
   async findById(id: string) {
     return await prisma.patient.findUnique({
       where: { id }

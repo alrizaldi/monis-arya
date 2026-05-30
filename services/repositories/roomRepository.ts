@@ -7,6 +7,23 @@ export class RoomRepository {
     return await prisma.room.findMany();
   }
 
+  async findWithPagination(skip: number, limit: number, whereClause: any = {}) {
+    return await prisma.room.findMany({
+      skip,
+      take: limit,
+      where: whereClause,
+      orderBy: {
+        createdAt: 'desc', // Sort by creation date descending by default
+      },
+    });
+  }
+
+  async count(whereClause: any = {}) {
+    return await prisma.room.count({
+      where: whereClause,
+    });
+  }
+
   async findById(id: string) {
     return await prisma.room.findUnique({
       where: { id }
