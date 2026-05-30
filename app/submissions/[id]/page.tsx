@@ -135,9 +135,9 @@ export default function SubmissionDetailPage() {
         if (!response.ok) {
           throw new Error('Failed to fetch submission');
         }
-        const data = await response.json();
-        setSubmission(data);
-        setDetails(data.details || []);
+        const submissionData = await response.json();
+        setSubmission(submissionData);
+        setDetails(submissionData.details || []);
       } catch (error) {
         console.error("Error fetching submission:", error);
       } finally {
@@ -150,7 +150,7 @@ export default function SubmissionDetailPage() {
     }
   }, [id]);
 
-  const onSubmitDetail = async (data: SubmissionDetailFormValues) => {
+  const onSubmitDetail = async (formData: SubmissionDetailFormValues) => {
     try {
       if (editingDetail) {
         // Update existing detail
@@ -160,8 +160,8 @@ export default function SubmissionDetailPage() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            ...data,
-            submissionValue: data.submissionValue // Now sending as string
+            ...formData,
+            submissionValue: formData.submissionValue // Now sending as string
           })
         });
         
@@ -177,8 +177,8 @@ export default function SubmissionDetailPage() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            ...data,
-            submissionValue: data.submissionValue // Now sending as string
+            ...formData,
+            submissionValue: formData.submissionValue // Now sending as string
           })
         });
         
@@ -193,9 +193,9 @@ export default function SubmissionDetailPage() {
       if (!refreshResponse.ok) {
         throw new Error('Failed to refresh submission');
       }
-      const data = await refreshResponse.json();
-      setSubmission(data);
-      setDetails(data.details || []);
+      const refreshedData = await refreshResponse.json();
+      setSubmission(refreshedData);
+      setDetails(refreshedData.details || []);
       
       resetDetail();
       setIsDetailDialogOpen(false);
@@ -206,7 +206,7 @@ export default function SubmissionDetailPage() {
     }
   };
 
-  const onSubmitPending = async (data: PendingRecordFormValues) => {
+  const onSubmitPending = async (formData: PendingRecordFormValues) => {
     try {
       if (selectedDetailForPending) {
         // Add pending record to selected detail
@@ -216,7 +216,7 @@ export default function SubmissionDetailPage() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            ...data
+            ...formData
           })
         });
         
@@ -250,7 +250,7 @@ export default function SubmissionDetailPage() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          },
+        },
         body: JSON.stringify({
           action: 'approve'
         })
@@ -266,9 +266,9 @@ export default function SubmissionDetailPage() {
       if (!refreshResponse.ok) {
         throw new Error('Failed to refresh submission');
       }
-      const data = await refreshResponse.json();
-      setSubmission(data);
-      setDetails(data.details || []);
+      const refreshedData = await refreshResponse.json();
+      setSubmission(refreshedData);
+      setDetails(refreshedData.details || []);
       
       alert(`Submission ${submission?.submissionNumber} approved!`);
     } catch (error) {
@@ -299,9 +299,9 @@ export default function SubmissionDetailPage() {
       if (!refreshResponse.ok) {
         throw new Error('Failed to refresh submission');
       }
-      const data = await refreshResponse.json();
-      setSubmission(data);
-      setDetails(data.details || []);
+      const refreshedData = await refreshResponse.json();
+      setSubmission(refreshedData);
+      setDetails(refreshedData.details || []);
       
       alert(`Submission ${submission?.submissionNumber} rejected!`);
     } catch (error) {
@@ -338,9 +338,9 @@ export default function SubmissionDetailPage() {
       if (!refreshResponse.ok) {
         throw new Error('Failed to refresh submission');
       }
-      const data = await refreshResponse.json();
-      setSubmission(data);
-      setDetails(data.details || []);
+      const refreshedData = await refreshResponse.json();
+      setSubmission(refreshedData);
+      setDetails(refreshedData.details || []);
     } catch (error) {
       console.error("Error resolving pending record:", error);
       alert(error instanceof Error ? error.message : "An error occurred while resolving the pending record");
