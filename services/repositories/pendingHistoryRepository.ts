@@ -1,4 +1,4 @@
-import { PrismaClient, type PendingHistory, PendingType } from '@prisma/client';
+import { PrismaClient, type PendingHistory } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -43,13 +43,13 @@ export class PendingHistoryRepository {
 
   async create(data: {
     submissionDetailId: string;
-    pendingType: string; // Accepting string and converting to enum
+    pendingType: string; // Accepting string directly since there's no enum
     pendingNote?: string;
   }) {
     return await prisma.pendingHistory.create({
       data: {
         submissionDetailId: data.submissionDetailId,
-        pendingType: data.pendingType as PendingType, // Convert string to enum
+        pendingType: data.pendingType, // Just use the string directly
         pendingNote: data.pendingNote
       },
       include: {
@@ -63,7 +63,7 @@ export class PendingHistoryRepository {
   }
 
   async update(id: string, data: Partial<{
-    pendingType: string; // Accepting string and converting to enum
+    pendingType: string; // Accepting string directly since there's no enum
     pendingNote?: string;
     resolvedAt?: Date;
     isActive?: boolean;
@@ -72,7 +72,7 @@ export class PendingHistoryRepository {
       where: { id },
       data: {
         ...data,
-        pendingType: data.pendingType ? data.pendingType as PendingType : undefined, // Convert string to enum if provided
+        pendingType: data.pendingType, // Just use the string directly
       },
       include: {
         submissionDetail: {

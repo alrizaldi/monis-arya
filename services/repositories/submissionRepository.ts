@@ -17,8 +17,6 @@ export class SubmissionRepository {
         patient: true,
         room: true,
         payer: true,
-        note: true, // Include note field
-        submittedBy: true, // Include submittedBy field
         details: {
           include: {
             pendingHistories: true // Show all pending histories, both active and inactive

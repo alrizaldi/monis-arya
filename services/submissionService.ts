@@ -304,7 +304,7 @@ export class SubmissionService {
   }) {
     const pending = await pendingHistoryRepo.create({
       submissionDetailId,
-      pendingType: data.pendingType, // Pass the string directly, repository handles conversion
+      pendingType: data.pendingType, // Use string directly, no enum conversion needed
       pendingNote: data.pendingNote
     });
     
