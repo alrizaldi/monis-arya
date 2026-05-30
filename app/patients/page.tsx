@@ -378,6 +378,7 @@ export default function PatientsPage() {
         <div className="flex items-center justify-center h-screen">
           <p>Loading...</p>
         </div>
+      </div>
     );
   }
 
@@ -489,7 +490,7 @@ export default function PatientsPage() {
         </div>
       </div>
 
-      {/* Filters - completely isolated from form context */}
+      {/* Filters - with button approach */}
       <div className="bg-white shadow rounded-lg p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
@@ -544,6 +545,25 @@ export default function PatientsPage() {
               className="w-full"
             />
           </div>
+        </div>
+        
+        {/* Filter Buttons */}
+        <div className="flex gap-2 mt-4">
+          <Button 
+            type="button" 
+            onClick={handleApplyFilters}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Search className="h-4 w-4 mr-2" />
+            Filter
+          </Button>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={handleClearFilters}
+          >
+            Clear Filters
+          </Button>
         </div>
       </div>
 
@@ -603,28 +623,8 @@ export default function PatientsPage() {
         </Table>
       </div>
 
-      {/* Filter Buttons */}
-      <div className="flex gap-2 mt-4">
-        <Button 
-          type="button" 
-          onClick={handleApplyFilters}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          <Search className="h-4 w-4 mr-2" />
-          Filter
-        </Button>
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={handleClearFilters}
-        >
-          Clear Filters
-        </Button>
-      </div>
-    </div>
-    
-    {/* Pagination Controls */}
-    {pagination.totalPages > 1 && (
+      {/* Pagination Controls */}
+      {pagination.totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
           <div className="text-sm text-gray-700">
             Showing <span className="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> to{' '}
