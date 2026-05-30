@@ -21,7 +21,17 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Eye, Edit, Trash2, Search, Filter, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import {
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
+  Search,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+} from "lucide-react";
 import { useRouter } from 'next/navigation';
 
 // Types for the dropdown data
@@ -422,6 +432,11 @@ export default function SubmissionsPage() {
     router.push(`/submissions/${submission.id}`);
   };
 
+  const handleExportPdf = (submissionId: string) => {
+    // Open a new window/tab with the PDF report page URL (not the API endpoint)
+    window.open(`/pdf/report/${submissionId}`, '_blank');
+  };
+
   const handleFilterChange = (field: keyof typeof tempFilters, value: string) => {
     setTempFilters(prev => ({
       ...prev,
@@ -703,6 +718,13 @@ export default function SubmissionsPage() {
                         onClick={() => handleView(submission)}
                       >
                         <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleExportPdf(submission.id)}
+                      >
+                        <FileText className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>

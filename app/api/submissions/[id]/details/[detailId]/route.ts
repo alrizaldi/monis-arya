@@ -30,11 +30,24 @@ export async function PUT(
   try {
     const body = await request.json();
     
-    const detail = await submissionService.updateSubmissionDetail(params.detailId, {
-      submissionType: body.submissionType,
-      pengajuan: body.pengajuan, // Using renamed field
-      note: body.note
-    });
+    // Prepare update data with only provided fields
+    const updateData: Partial<{
+      submissionType: string;
+      pengajuan: string;
+      note?: string;
+    }> = {};
+    
+    if (body.submissionType !== undefined) {
+      updateData.submissionType = body.submissionType;
+    }
+    if (body.pengajuan !== undefined) {
+      updateData.pengajuan = body.pengajuan;
+    }
+    if (body.note !== undefined) {
+      updateData.note = body.note;
+    }
+    
+    const detail = await submissionService.updateSubmissionDetail(params.detailId, updateData);
     
     return NextResponse.json(detail, { status: 200 });
   } catch (error: any) {

@@ -87,16 +87,18 @@ export async function middleware(req: NextRequest) {
   console.log("Middleware - Error:", error?.message);
 
   // Check if the current path is a protected route
+  // Exclude PDF routes from authentication since they are standalone pages for printing/exporting
+  const isPdfRoute = req.nextUrl.pathname.startsWith('/pdf/report/');
   const protectedPaths = [
     "/dashboard",
     "/patients",
     "/rooms",
     "/payers",
-    "/submissions",
+    "/submissions", // This includes /submissions/* but excludes /pdf/report/*
     "/pending",
     "/audit",
   ];
-  const isProtectedRoute = protectedPaths.some((path) =>
+  const isProtectedRoute = !isPdfRoute && protectedPaths.some((path) =>
     req.nextUrl.pathname.startsWith(path),
   );
 

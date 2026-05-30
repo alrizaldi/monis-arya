@@ -111,6 +111,7 @@ export default function SubmissionDetailPage() {
   const [isPendingDialogOpen, setIsPendingDialogOpen] = useState(false);
   const [editingDetail, setEditingDetail] = useState<any>(null);
   const [selectedDetailForPending, setSelectedDetailForPending] = useState<any>(null);
+  const [editingNoteDetail, setEditingNoteDetail] = useState<{id: string, note: string} | null>(null);
   
   const { 
     register: registerDetail, 
@@ -416,6 +417,45 @@ export default function SubmissionDetailPage() {
     }
   };
 
+  const handleEditNote = (detailId: string, currentNote: string) => {
+    setEditingNoteDetail({ id: detailId, note: currentNote || '' });
+  };
+
+  const handleSaveNote = async () => {
+    if (!editingNoteDetail) return;
+    
+    try {
+      const response = await fetch(`/api/submissions/${id}/details/${editingNoteDetail.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          note: editingNoteDetail.note
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update note');
+      }
+      
+      // Refresh the submission data
+      const refreshResponse = await fetch(`/api/submissions/${id}`);
+      if (!refreshResponse.ok) {
+        throw new Error('Failed to refresh submission');
+      }
+      const refreshedData = await refreshResponse.json();
+      setSubmission(refreshedData);
+      setDetails(refreshedData.details || []);
+      
+      setEditingNoteDetail(null);
+    } catch (error) {
+      console.error("Error updating note:", error);
+      alert(error instanceof Error ? error.message : "An error occurred while updating the note");
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -620,7 +660,47 @@ export default function SubmissionDetailPage() {
               <TableRow key={detail.id}>
                 <TableCell className="font-medium">{detail.submissionType}</TableCell>
                 <TableCell className="text-lg font-semibold text-gray-900">{detail.pengajuan}</TableCell> {/* Using pengajuan */}
-                <TableCell>{detail.note}</TableCell>
+                <TableCell>
+                  {editingNoteDetail?.id === detail.id ? (
+                    <div className="flex flex-col space-y-2">
+                      <textarea
+                        value={editingNoteDetail.note}
+                        onChange={(e) => setEditingNoteDetail({...editingNoteDetail, note: e.target.value})}
+                        className="border rounded-md px-3 py-2 text-sm"
+                        rows={3}
+                      />
+                      <div className="flex space-x-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={handleSaveNote}
+                        >
+                          Save
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => setEditingNoteDetail(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="max-w-xs truncate">{detail.note}</div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => handleEditNote(detail.id, detail.note || '')}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Note
+                      </Button>
+                    </>
+                  )}
+                </TableCell>
                 <TableCell>
                   <Badge 
                     className={`${
