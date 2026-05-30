@@ -12,9 +12,78 @@ const submissionDetailRepo = new SubmissionDetailRepository();
 const pendingHistoryRepo = new PendingHistoryRepository();
 const auditLogRepo = new AuditLogRepository();
 
+export interface SubmissionFilters {
+  submissionNumber?: string;
+  patientName?: string;
+  payerName?: string;
+  status?: string;
+}
+
+export interface PaginationOptions {
+  page: number;
+  limit: number;
+  filters?: SubmissionFilters;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export class SubmissionService {
   async getAllSubmissions() {
     return await submissionRepo.findAll();
+  }
+
+  async getSubmissionsWithPagination(options: PaginationOptions): Promise<PaginatedResult<any>> {
+    const { page, limit, filters } = options;
+    const skip = (page - 1) * limit;
+
+    // Prepare where clause based on filters
+    const whereClause: any = {};
+    if (filters?.submissionNumber) {
+      whereClause.submissionNumber = {
+        contains: filters.submissionNumber,
+        mode: 'insensitive', // case insensitive search
+      };
+    }
+    if (filters?.patientName) {
+      whereClause.patient = {
+        patientName: {
+          contains: filters.patientName,
+          mode: 'insensitive',
+        }
+      };
+    }
+    if (filters?.payerName) {
+      whereClause.payer = {
+        payerName: {
+          contains: filters.payerName,
+          mode: 'insensitive',
+        }
+      };
+    }
+    if (filters?.status) {
+      whereClause.status = filters.status;
+    }
+
+    const [submissions, totalCount] = await Promise.all([
+      submissionRepo.findWithPagination(skip, limit, whereClause),
+      submissionRepo.count(whereClause),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return {
+      data: submissions,
+      total: totalCount,
+      page,
+      limit,
+      totalPages,
+    };
   }
 
   async getSubmissionById(id: string) {

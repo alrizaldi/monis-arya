@@ -32,7 +32,7 @@ import dayjs from 'dayjs';
 // Define schema for submission detail form validation
 const submissionDetailSchema = z.object({
   submissionType: z.string().min(1, 'Submission Type is required'),
-  submissionValue: z.number().min(0, 'Value must be positive'),
+  submissionValue: z.string().min(1, 'Value is required'), // Changed from number to string
   note: z.string().optional(),
 });
 
@@ -46,70 +46,63 @@ const pendingRecordSchema = z.object({
 
 type PendingRecordFormValues = z.infer<typeof pendingRecordSchema>;
 
-// Mock data for demonstration
-const mockSubmission = {
-  id: '1',
-  submissionNumber: 'SUB-001',
+// Define types based on the actual API response
+type Submission = {
+  id: string;
+  submissionNumber: string;
   patient: {
-    patientName: 'John Doe',
-    medicalRecordNumber: 'MR-001',
-    gender: 'Male',
-    birthDate: '1985-05-15'
-  },
+    id: string;
+    patientName: string;
+    medicalRecordNumber: string;
+    gender: string;
+    birthDate: Date;
+    createdAt: Date;
+    updatedAt: Date;
+  };
   room: {
-    roomNumber: '101',
-    bedNumber: 1,
-    roomClass: 'VIP'
-  },
+    id: string;
+    roomNumber: string;
+    bedNumber: number;
+    roomClass: string;
+    createdAt: Date;
+    updatedAt: Date;
+  };
   payer: {
-    payerName: 'BPJS Kesehatan'
-  },
-  status: 'PENDING',
-  submittedAt: '2023-05-01T10:00:00Z',
-  approvedAt: null,
-  rejectedAt: null,
-  createdAt: '2023-05-01T09:00:00Z',
-  updatedAt: '2023-05-01T11:00:00Z'
+    id: string;
+    payerName: string;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+  status: string;
+  submittedAt?: Date;
+  approvedAt?: Date;
+  rejectedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  details: Array<{
+    id: string;
+    submissionType: string;
+    submissionValue: string; // Changed from number to string
+    note?: string;
+    createdAt: Date;
+    updatedAt: Date;
+    pendingHistories: Array<{
+      id: string;
+      pendingType: string;
+      pendingNote?: string;
+      isActive: boolean;
+      createdAt: Date;
+      updatedAt: Date;
+      resolvedAt?: Date;
+    }>
+  }>;
 };
-
-const mockDetails = [
-  {
-    id: '1',
-    submissionType: 'ROOM',
-    submissionValue: 1500000,
-    note: 'VIP room charge for 3 days',
-    pendingHistories: []
-  },
-  {
-    id: '2',
-    submissionType: 'MEDICINE',
-    submissionValue: 250000,
-    note: 'Prescription medications',
-    pendingHistories: []
-  },
-  {
-    id: '3',
-    submissionType: 'LAB',
-    submissionValue: 300000,
-    note: 'Complete blood count test',
-    pendingHistories: [
-      {
-        id: '1',
-        pendingType: 'Authorization Required',
-        pendingNote: 'Additional authorization needed for lab test',
-        createdAt: '2023-05-01T10:30:00Z',
-        resolvedAt: null,
-        isActive: true
-      }
-    ]
-  }
-];
 
 export default function SubmissionDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [submission, setSubmission] = useState<any>(null);
-  const [details, setDetails] = useState<any[]>([]);
+  const [submission, setSubmission] = useState<Submission | null>(null);
+  const [details, setDetails] = useState<Submission['details']>([]);
   const [loading, setLoading] = useState(true);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isPendingDialogOpen, setIsPendingDialogOpen] = useState(false);
@@ -135,71 +128,186 @@ export default function SubmissionDetailPage() {
   });
 
   useEffect(() => {
-    // In a real app, fetch submission data from API
-    setTimeout(() => {
-      setSubmission(mockSubmission);
-      setDetails(mockDetails);
-      setLoading(false);
-    }, 500);
+    // Fetch submission data from API
+    const fetchSubmission = async () => {
+      try {
+        const response = await fetch(`/api/submissions/${id}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch submission');
+        }
+        const data = await response.json();
+        setSubmission(data);
+        setDetails(data.details || []);
+      } catch (error) {
+        console.error("Error fetching submission:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchSubmission();
+    }
   }, [id]);
 
-  const onSubmitDetail = (data: SubmissionDetailFormValues) => {
-    if (editingDetail) {
-      // Update existing detail
-      setDetails(details.map(d => 
-        d.id === editingDetail.id ? { ...d, ...data } : d
-      ));
-    } else {
-      // Add new detail
-      const newDetail = {
-        id: (details.length + 1).toString(),
-        ...data,
-        pendingHistories: []
-      };
-      setDetails([...details, newDetail]);
+  const onSubmitDetail = async (data: SubmissionDetailFormValues) => {
+    try {
+      if (editingDetail) {
+        // Update existing detail
+        const response = await fetch(`/api/submissions/${id}/details/${editingDetail.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...data,
+            submissionValue: data.submissionValue // Now sending as string
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update detail');
+        }
+      } else {
+        // Add new detail
+        const response = await fetch(`/api/submissions/${id}/details`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...data,
+            submissionValue: data.submissionValue // Now sending as string
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create detail');
+        }
+      }
+      
+      // Refresh the submission data
+      const refreshResponse = await fetch(`/api/submissions/${id}`);
+      if (!refreshResponse.ok) {
+        throw new Error('Failed to refresh submission');
+      }
+      const data = await refreshResponse.json();
+      setSubmission(data);
+      setDetails(data.details || []);
+      
+      resetDetail();
+      setIsDetailDialogOpen(false);
+      setEditingDetail(null);
+    } catch (error) {
+      console.error("Error saving detail:", error);
+      alert(error instanceof Error ? error.message : "An error occurred while saving the detail");
     }
-    
-    resetDetail();
-    setIsDetailDialogOpen(false);
-    setEditingDetail(null);
   };
 
-  const onSubmitPending = (data: PendingRecordFormValues) => {
-    if (selectedDetailForPending) {
-      // Add pending record to selected detail
-      const updatedDetails = details.map(detail => {
-        if (detail.id === selectedDetailForPending.id) {
-          const newPending = {
-            id: (detail.pendingHistories.length + 1).toString(),
-            ...data,
-            createdAt: new Date().toISOString(),
-            resolvedAt: null,
-            isActive: true
-          };
-          return {
-            ...detail,
-            pendingHistories: [...detail.pendingHistories, newPending]
-          };
+  const onSubmitPending = async (data: PendingRecordFormValues) => {
+    try {
+      if (selectedDetailForPending) {
+        // Add pending record to selected detail
+        const response = await fetch(`/api/submissions/${id}/details/${selectedDetailForPending.id}/pending`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...data
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create pending record');
         }
-        return detail;
+        
+        // Refresh the submission data
+        const refreshResponse = await fetch(`/api/submissions/${id}`);
+        if (!refreshResponse.ok) {
+          throw new Error('Failed to refresh submission');
+        }
+        const refreshedData = await refreshResponse.json();
+        setSubmission(refreshedData);
+        setDetails(refreshedData.details || []);
+      }
+      
+      resetPending();
+      setIsPendingDialogOpen(false);
+      setSelectedDetailForPending(null);
+    } catch (error) {
+      console.error("Error adding pending record:", error);
+      alert(error instanceof Error ? error.message : "An error occurred while adding the pending record");
+    }
+  };
+
+  const handleApprove = async () => {
+    try {
+      const response = await fetch(`/api/submissions/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          },
+        body: JSON.stringify({
+          action: 'approve'
+        })
       });
       
-      setDetails(updatedDetails);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to approve submission');
+      }
+      
+      // Refresh the submission data
+      const refreshResponse = await fetch(`/api/submissions/${id}`);
+      if (!refreshResponse.ok) {
+        throw new Error('Failed to refresh submission');
+      }
+      const data = await refreshResponse.json();
+      setSubmission(data);
+      setDetails(data.details || []);
+      
+      alert(`Submission ${submission?.submissionNumber} approved!`);
+    } catch (error) {
+      console.error("Error approving submission:", error);
+      alert(error instanceof Error ? error.message : "An error occurred while approving the submission");
     }
-    
-    resetPending();
-    setIsPendingDialogOpen(false);
-    setSelectedDetailForPending(null);
   };
 
-  const handleApprove = () => {
-    // In a real app, call API to approve submission
-    alert(`Submission ${submission.submissionNumber} approved!`);
-  };
-
-  const handleReject = () => {
-    // In a real app, call API to reject submission
-    alert(`Submission ${submission.submissionNumber} rejected!`);
+  const handleReject = async () => {
+    try {
+      const response = await fetch(`/api/submissions/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'reject'
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to reject submission');
+      }
+      
+      // Refresh the submission data
+      const refreshResponse = await fetch(`/api/submissions/${id}`);
+      if (!refreshResponse.ok) {
+        throw new Error('Failed to refresh submission');
+      }
+      const data = await refreshResponse.json();
+      setSubmission(data);
+      setDetails(data.details || []);
+      
+      alert(`Submission ${submission?.submissionNumber} rejected!`);
+    } catch (error) {
+      console.error("Error rejecting submission:", error);
+      alert(error instanceof Error ? error.message : "An error occurred while rejecting the submission");
+    }
   };
 
   const handleAddPending = (detail: any) => {
@@ -208,19 +316,35 @@ export default function SubmissionDetailPage() {
     setIsPendingDialogOpen(true);
   };
 
-  const handleResolvePending = (detailId: string, pendingId: string) => {
-    // In a real app, call API to resolve pending
-    const updatedDetails = details.map(detail => {
-      if (detail.id === detailId) {
-        const updatedPendingHistories = detail.pendingHistories.map((pending: any) => 
-          pending.id === pendingId ? { ...pending, resolvedAt: new Date().toISOString(), isActive: false } : pending
-        );
-        return { ...detail, pendingHistories: updatedPendingHistories };
+  const handleResolvePending = async (detailId: string, pendingId: string) => {
+    try {
+      const response = await fetch(`/api/submissions/${id}/details/${detailId}/pending/${pendingId}/resolve`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'resolve'
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to resolve pending record');
       }
-      return detail;
-    });
-    
-    setDetails(updatedDetails);
+      
+      // Refresh the submission data
+      const refreshResponse = await fetch(`/api/submissions/${id}`);
+      if (!refreshResponse.ok) {
+        throw new Error('Failed to refresh submission');
+      }
+      const data = await refreshResponse.json();
+      setSubmission(data);
+      setDetails(data.details || []);
+    } catch (error) {
+      console.error("Error resolving pending record:", error);
+      alert(error instanceof Error ? error.message : "An error occurred while resolving the pending record");
+    }
   };
 
   if (loading) {
@@ -243,19 +367,19 @@ export default function SubmissionDetailPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Submission Detail</h1>
-          <p className="text-gray-600">ID: {submission.submissionNumber}</p>
+          <p className="text-gray-600">ID: {submission?.submissionNumber}</p>
         </div>
         <div className="flex space-x-3">
           <Badge 
             className={`${
-              submission.status === 'APPROVED' ? 'bg-green-500' : 
-              submission.status === 'PENDING' ? 'bg-yellow-500' : 
-              submission.status === 'REJECTED' ? 'bg-red-500' : 
-              submission.status === 'SUBMITTED' ? 'bg-blue-500' : 
+              submission?.status === 'APPROVED' ? 'bg-green-500' : 
+              submission?.status === 'PENDING' ? 'bg-yellow-500' : 
+              submission?.status === 'REJECTED' ? 'bg-red-500' : 
+              submission?.status === 'SUBMITTED' ? 'bg-blue-500' : 
               'bg-gray-500'
             }`}
           >
-            {submission.status}
+            {submission?.status}
           </Badge>
         </div>
       </div>
@@ -266,19 +390,19 @@ export default function SubmissionDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <p className="text-sm text-gray-500">Name</p>
-            <p className="font-medium">{submission.patient.patientName}</p>
+            <p className="font-medium">{submission?.patient.patientName}</p>
           </div>
           <div>
             <p className="text-sm text-gray-500">Medical Record</p>
-            <p className="font-medium">{submission.patient.medicalRecordNumber}</p>
+            <p className="font-medium">{submission?.patient.medicalRecordNumber}</p>
           </div>
           <div>
             <p className="text-sm text-gray-500">Gender</p>
-            <p className="font-medium">{submission.patient.gender}</p>
+            <p className="font-medium">{submission?.patient.gender}</p>
           </div>
           <div>
             <p className="text-sm text-gray-500">Birth Date</p>
-            <p className="font-medium">{new Date(submission.patient.birthDate).toLocaleDateString()}</p>
+            <p className="font-medium">{submission?.patient.birthDate ? new Date(submission.patient.birthDate).toLocaleDateString() : ''}</p>
           </div>
         </div>
       </div>
@@ -289,15 +413,15 @@ export default function SubmissionDetailPage() {
           <h2 className="text-xl font-semibold mb-4">Room Information</h2>
           <div>
             <p className="text-sm text-gray-500">Room Number</p>
-            <p className="font-medium">{submission.room.roomNumber}</p>
+            <p className="font-medium">{submission?.room.roomNumber}</p>
           </div>
           <div className="mt-2">
             <p className="text-sm text-gray-500">Bed Number</p>
-            <p className="font-medium">{submission.room.bedNumber}</p>
+            <p className="font-medium">{submission?.room.bedNumber}</p>
           </div>
           <div className="mt-2">
             <p className="text-sm text-gray-500">Room Class</p>
-            <p className="font-medium">{submission.room.roomClass}</p>
+            <p className="font-medium">{submission?.room.roomClass}</p>
           </div>
         </div>
         
@@ -305,7 +429,7 @@ export default function SubmissionDetailPage() {
           <h2 className="text-xl font-semibold mb-4">Payer Information</h2>
           <div>
             <p className="text-sm text-gray-500">Payer Name</p>
-            <p className="font-medium">{submission.payer.payerName}</p>
+            <p className="font-medium">{submission?.payer.payerName}</p>
           </div>
         </div>
       </div>
@@ -316,6 +440,7 @@ export default function SubmissionDetailPage() {
           variant="default" 
           className="bg-green-600 hover:bg-green-700"
           onClick={handleApprove}
+          disabled={submission?.status === 'APPROVED' || submission?.status === 'REJECTED'}
         >
           <CheckCircle className="h-4 w-4 mr-2" />
           Approve Submission
@@ -323,6 +448,7 @@ export default function SubmissionDetailPage() {
         <Button 
           variant="destructive"
           onClick={handleReject}
+          disabled={submission?.status === 'APPROVED' || submission?.status === 'REJECTED'}
         >
           <XCircle className="h-4 w-4 mr-2" />
           Reject Submission
@@ -380,9 +506,9 @@ export default function SubmissionDetailPage() {
                   </Label>
                   <Input
                     id="submissionValue"
-                    type="number"
+                    type="text"
                     className="col-span-3"
-                    {...registerDetail('submissionValue', { valueAsNumber: true })}
+                    {...registerDetail('submissionValue')}
                   />
                   {detailErrors.submissionValue && (
                     <p className="col-start-2 col-span-3 text-red-500 text-sm">
@@ -429,12 +555,12 @@ export default function SubmissionDetailPage() {
             {details.map((detail) => (
               <TableRow key={detail.id}>
                 <TableCell className="font-medium">{detail.submissionType}</TableCell>
-                <TableCell>Rp {detail.submissionValue.toLocaleString()}</TableCell>
+                <TableCell>{detail.submissionValue}</TableCell>
                 <TableCell>{detail.note}</TableCell>
                 <TableCell>
                   {detail.pendingHistories.length > 0 ? (
                     <div className="space-y-1">
-                      {detail.pendingHistories.map((pending: any) => (
+                      {detail.pendingHistories.map((pending) => (
                         <div 
                           key={pending.id} 
                           className={`flex justify-between items-center p-2 rounded ${

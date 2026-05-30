@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { Session } from '@supabase/supabase-js';
-import { createContext, useContext, useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { Session } from "@supabase/supabase-js";
+import { createContext, useContext, useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 interface AuthContextType {
   session: Session | null;
@@ -21,14 +21,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('AuthProvider - Initial session loaded:', session ? 'authenticated' : 'unauthenticated');
       setSession(session);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('AuthProvider - Auth state changed:', _event, session ? 'authenticated' : 'unauthenticated');
       setSession(session);
     });
 
@@ -39,20 +37,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     const supabase = createClient();
-    console.log('AuthProvider - Attempting to sign in with email:', email);
     return await supabase.auth.signInWithPassword({ email, password });
   };
 
   const signOut = async () => {
     const supabase = createClient();
-    console.log('AuthProvider - Signing out...');
     await supabase.auth.signOut();
     setSession(null);
   };
 
   const signUp = async (email: string, password: string) => {
     const supabase = createClient();
-    console.log('AuthProvider - Attempting to sign up with email:', email);
     return await supabase.auth.signUp({ email, password });
   };
 
@@ -66,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

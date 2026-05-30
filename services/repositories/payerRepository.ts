@@ -7,6 +7,23 @@ export class PayerRepository {
     return await prisma.payer.findMany();
   }
 
+  async findWithPagination(skip: number, limit: number, whereClause: any = {}) {
+    return await prisma.payer.findMany({
+      skip,
+      take: limit,
+      where: whereClause,
+      orderBy: {
+        createdAt: 'desc', // Sort by creation date descending by default
+      },
+    });
+  }
+
+  async count(whereClause: any = {}) {
+    return await prisma.payer.count({
+      where: whereClause,
+    });
+  }
+
   async findById(id: string) {
     return await prisma.payer.findUnique({
       where: { id }

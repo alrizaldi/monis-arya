@@ -5,8 +5,22 @@ const payerService = new PayerService();
 
 export async function GET(request: NextRequest) {
   try {
-    const payers = await payerService.getAllPayers();
-    return NextResponse.json(payers);
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const limit = parseInt(url.searchParams.get('limit') || '10');
+    const payerName = url.searchParams.get('payerName') || '';
+
+    const filters = {
+      payerName: payerName || undefined,
+    };
+
+    const result = await payerService.getPayersWithPagination({
+      page,
+      limit,
+      filters,
+    });
+
+    return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to fetch payers' }, 

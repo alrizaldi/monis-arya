@@ -30,6 +30,37 @@ export class SubmissionRepository {
     });
   }
 
+  async findWithPagination(skip: number, limit: number, whereClause: any = {}) {
+    return await prisma.submission.findMany({
+      skip,
+      take: limit,
+      where: whereClause,
+      include: {
+        patient: true,
+        room: true,
+        payer: true,
+        details: {
+          include: {
+            pendingHistories: {
+              where: {
+                isActive: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc', // Sort by creation date descending by default
+      },
+    });
+  }
+
+  async count(whereClause: any = {}) {
+    return await prisma.submission.count({
+      where: whereClause,
+    });
+  }
+
   /**
    * 根据ID查找提交
    * @param id 提交的唯一标识符
