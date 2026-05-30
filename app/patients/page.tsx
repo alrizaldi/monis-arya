@@ -1,38 +1,37 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2 } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { PatientService } from '@/services/patientService';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Plus, Edit, Trash2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
 // Define schema for patient form validation
 const patientSchema = z.object({
-  medicalRecordNumber: z.string().min(1, 'Medical Record Number is required'),
-  patientName: z.string().min(1, 'Patient Name is required'),
-  gender: z.string().min(1, 'Gender is required'),
-  birthDate: z.string().min(1, 'Birth Date is required'),
+  medicalRecordNumber: z.string().min(1, "Medical Record Number is required"),
+  patientName: z.string().min(1, "Patient Name is required"),
+  gender: z.string().min(1, "Gender is required"),
+  birthDate: z.string().min(1, "Birth Date is required"),
 });
 
 type PatientFormValues = z.infer<typeof patientSchema>;
@@ -53,21 +52,29 @@ export default function PatientsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [loading, setLoading] = useState(true);
-  
-  const patientService = new PatientService();
-  
-  const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<PatientFormValues>({
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+    setValue,
+  } = useForm<PatientFormValues>({
     resolver: zodResolver(patientSchema),
   });
 
-  // Load patients from database
+  // Load patients from API
   useEffect(() => {
     const loadPatients = async () => {
       try {
-        const data = await patientService.getAllPatients();
+        const response = await fetch('/api/patients');
+        if (!response.ok) {
+          throw new Error('Failed to fetch patients');
+        }
+        const data = await response.json();
         setPatients(data);
       } catch (error) {
-        console.error('Error loading patients:', error);
+        console.error("Error loading patients:", error);
       } finally {
         setLoading(false);
       }
@@ -78,56 +85,99 @@ export default function PatientsPage() {
 
   const onSubmit = async (data: PatientFormValues) => {
     try {
+      console.log("Saving patient:", data);
+      let response;
+      
       if (editingPatient) {
         // Update existing patient
-        const updatedPatient = await patientService.updatePatient(editingPatient.id, {
-          medicalRecordNumber: data.medicalRecordNumber,
-          patientName: data.patientName,
-          gender: data.gender,
-          birthDate: new Date(data.birthDate),
+        response = await fetch(`/api/patients/${editingPatient.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            medicalRecordNumber: data.medicalRecordNumber,
+            patientName: data.patientName,
+            gender: data.gender,
+            birthDate: new Date(data.birthDate),
+          }),
         });
         
-        setPatients(patients.map(p => 
-          p.id === editingPatient.id ? updatedPatient : p
-        ));
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update patient');
+        }
+        
+        const updatedPatient = await response.json();
+        setPatients(
+          patients.map((p) =>
+            p.id === editingPatient.id ? updatedPatient : p,
+          ),
+        );
       } else {
         // Add new patient
-        const newPatient = await patientService.createPatient({
-          medicalRecordNumber: data.medicalRecordNumber,
-          patientName: data.patientName,
-          gender: data.gender,
-          birthDate: new Date(data.birthDate),
+        response = await fetch('/api/patients', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            medicalRecordNumber: data.medicalRecordNumber,
+            patientName: data.patientName,
+            gender: data.gender,
+            birthDate: new Date(data.birthDate),
+          }),
         });
         
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create patient');
+        }
+        
+        const newPatient = await response.json();
         setPatients([...patients, newPatient]);
       }
-      
+
       reset();
       setIsDialogOpen(false);
       setEditingPatient(null);
     } catch (error) {
-      console.error('Error saving patient:', error);
-      alert(error instanceof Error ? error.message : 'An error occurred while saving the patient');
+      console.error("Error saving patient:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "An error occurred while saving the patient",
+      );
     }
   };
 
   const handleEdit = (patient: Patient) => {
     setEditingPatient(patient);
-    setValue('medicalRecordNumber', patient.medicalRecordNumber);
-    setValue('patientName', patient.patientName);
-    setValue('gender', patient.gender);
-    setValue('birthDate', new Date(patient.birthDate).toISOString().split('T')[0]); // Format date as YYYY-MM-DD
+    setValue("medicalRecordNumber", patient.medicalRecordNumber);
+    setValue("patientName", patient.patientName);
+    setValue("gender", patient.gender);
+    setValue(
+      "birthDate",
+      new Date(patient.birthDate).toISOString().split("T")[0],
+    ); // Format date as YYYY-MM-DD
     setIsDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this patient?')) {
+    if (window.confirm("Are you sure you want to delete this patient?")) {
       try {
-        await patientService.deletePatient(id);
-        setPatients(patients.filter(p => p.id !== id));
+        const response = await fetch(`/api/patients/${id}`, {
+          method: 'DELETE',
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to delete patient');
+        }
+        
+        setPatients(patients.filter((p) => p.id !== id));
       } catch (error) {
-        console.error('Error deleting patient:', error);
-        alert('An error occurred while deleting the patient');
+        console.error("Error deleting patient:", error);
+        alert("An error occurred while deleting the patient");
       }
     }
   };
@@ -148,7 +198,7 @@ export default function PatientsPage() {
         <h1 className="text-3xl font-bold text-gray-900">Patients</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button 
+            <Button
               onClick={() => {
                 setEditingPatient(null);
                 reset();
@@ -160,11 +210,13 @@ export default function PatientsPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>{editingPatient ? 'Edit Patient' : 'Add New Patient'}</DialogTitle>
+              <DialogTitle>
+                {editingPatient ? "Edit Patient" : "Add New Patient"}
+              </DialogTitle>
               <DialogDescription>
-                {editingPatient 
-                  ? 'Update patient information' 
-                  : 'Enter patient information to add a new patient'}
+                {editingPatient
+                  ? "Update patient information"
+                  : "Enter patient information to add a new patient"}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)}>
@@ -176,7 +228,7 @@ export default function PatientsPage() {
                   <Input
                     id="medicalRecordNumber"
                     className="col-span-3"
-                    {...register('medicalRecordNumber')}
+                    {...register("medicalRecordNumber")}
                   />
                   {errors.medicalRecordNumber && (
                     <p className="col-start-2 col-span-3 text-red-500 text-sm">
@@ -191,7 +243,7 @@ export default function PatientsPage() {
                   <Input
                     id="patientName"
                     className="col-span-3"
-                    {...register('patientName')}
+                    {...register("patientName")}
                   />
                   {errors.patientName && (
                     <p className="col-start-2 col-span-3 text-red-500 text-sm">
@@ -206,7 +258,7 @@ export default function PatientsPage() {
                   <select
                     id="gender"
                     className="col-span-3 border rounded-md px-3 py-2"
-                    {...register('gender')}
+                    {...register("gender")}
                   >
                     <option value="">Select Gender</option>
                     <option value="Male">Male</option>
@@ -226,7 +278,7 @@ export default function PatientsPage() {
                     id="birthDate"
                     type="date"
                     className="col-span-3"
-                    {...register('birthDate')}
+                    {...register("birthDate")}
                   />
                   {errors.birthDate && (
                     <p className="col-start-2 col-span-3 text-red-500 text-sm">
@@ -237,7 +289,7 @@ export default function PatientsPage() {
               </div>
               <DialogFooter>
                 <Button type="submit">
-                  {editingPatient ? 'Update Patient' : 'Add Patient'}
+                  {editingPatient ? "Update Patient" : "Add Patient"}
                 </Button>
               </DialogFooter>
             </form>
@@ -259,21 +311,25 @@ export default function PatientsPage() {
           <TableBody>
             {patients.map((patient) => (
               <TableRow key={patient.id}>
-                <TableCell className="font-medium">{patient.medicalRecordNumber}</TableCell>
+                <TableCell className="font-medium">
+                  {patient.medicalRecordNumber}
+                </TableCell>
                 <TableCell>{patient.patientName}</TableCell>
                 <TableCell>{patient.gender}</TableCell>
-                <TableCell>{new Date(patient.birthDate).toLocaleDateString()}</TableCell>
+                <TableCell>
+                  {new Date(patient.birthDate).toLocaleDateString()}
+                </TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => handleEdit(patient)}
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => handleDelete(patient.id)}
                     >
@@ -285,7 +341,10 @@ export default function PatientsPage() {
             ))}
             {patients.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                <TableCell
+                  colSpan={5}
+                  className="text-center py-8 text-gray-500"
+                >
                   No patients found
                 </TableCell>
               </TableRow>

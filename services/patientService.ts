@@ -2,6 +2,13 @@ import { PatientRepository } from './repositories/patientRepository';
 
 const patientRepo = new PatientRepository();
 
+// Helper function to convert string gender to Prisma enum
+function convertGender(gender: string): 'MALE' | 'FEMALE' {
+  if (gender.toLowerCase() === 'male') return 'MALE';
+  if (gender.toLowerCase() === 'female') return 'FEMALE';
+  throw new Error(`Invalid gender value: ${gender}`);
+}
+
 export class PatientService {
   async getAllPatients() {
     return await patientRepo.findAll();
@@ -23,7 +30,10 @@ export class PatientService {
       throw new Error('Patient with this medical record number already exists');
     }
     
-    return await patientRepo.create(data);
+    return await patientRepo.create({
+      ...data,
+      gender: convertGender(data.gender) // Convert to proper enum value
+    });
   }
 
   async updatePatient(id: string, data: {
@@ -38,7 +48,10 @@ export class PatientService {
       throw new Error('Patient with this medical record number already exists');
     }
     
-    return await patientRepo.update(id, data);
+    return await patientRepo.update(id, {
+      ...data,
+      gender: convertGender(data.gender) // Convert to proper enum value
+    });
   }
 
   async deletePatient(id: string) {
