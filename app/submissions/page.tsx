@@ -666,8 +666,9 @@ export default function SubmissionsPage() {
         </div>
       </div>
 
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <Table>
+      {/* Scrollable table container */}
+      <div className="bg-white shadow rounded-lg overflow-x-auto">
+        <Table className="min-w-full">
           <TableHeader>
             <TableRow>
               <TableHead>Submission #</TableHead>
