@@ -9,4 +9,4 @@ dist
 iisnode
 note.txt
 *.log
-.next
+.next/
