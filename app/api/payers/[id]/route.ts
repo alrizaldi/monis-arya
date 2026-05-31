@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PayerService } from '@/services/payerService';
+import { getUserFromRequest } from '@/lib/authUtils';
 
 const payerService = new PayerService();
 
@@ -26,11 +27,16 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const user = await getUserFromRequest(request);
+    if (!user || !user.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     
     const payer = await payerService.updatePayer(params.id, {
       payerName: body.payerName
-    });
+    }, user.email);
     
     return NextResponse.json(payer);
   } catch (error: any) {
@@ -46,7 +52,12 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await payerService.deletePayer(params.id);
+    const user = await getUserFromRequest(request);
+    if (!user || !user.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await payerService.deletePayer(params.id, user.email);
     return NextResponse.json({ message: 'Payer deleted successfully' });
   } catch (error) {
     return NextResponse.json(

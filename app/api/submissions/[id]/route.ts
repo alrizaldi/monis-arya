@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SubmissionService } from '@/services/submissionService';
+import { getUserFromRequest } from '@/lib/authUtils';
 
 const submissionService = new SubmissionService();
 
@@ -26,17 +27,34 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const user = await getUserFromRequest(request);
+    if (!user || !user.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     
-    const submission = await submissionService.updateSubmission(params.id, {
-      submissionNumber: body.submissionNumber,
-      patientId: body.patientId,
-      roomId: body.roomId,
-      payerId: body.payerId,
-      status: body.status
-    });
-    
-    return NextResponse.json(submission);
+    // Handle different types of updates
+    if (body.action === 'submit') {
+      const submission = await submissionService.submitSubmission(params.id, user.email);
+      return NextResponse.json(submission);
+    } else if (body.action === 'approve') {
+      const submission = await submissionService.approveSubmission(params.id, user.email);
+      return NextResponse.json(submission);
+    } else if (body.action === 'reject') {
+      const submission = await submissionService.rejectSubmission(params.id, user.email);
+      return NextResponse.json(submission);
+    } else {
+      // Regular update
+      const submission = await submissionService.updateSubmission(params.id, {
+        submissionNumber: body.submissionNumber,
+        patientId: body.patientId,
+        roomId: body.roomId,
+        payerId: body.payerId,
+        status: body.status
+      }, user.email);
+      return NextResponse.json(submission);
+    }
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to update submission' }, 
@@ -50,7 +68,12 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await submissionService.deleteSubmission(params.id);
+    const user = await getUserFromRequest(request);
+    if (!user || !user.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await submissionService.deleteSubmission(params.id, user.email);
     return NextResponse.json({ message: 'Submission deleted successfully' });
   } catch (error: any) {
     return NextResponse.json(
@@ -66,19 +89,24 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    const user = await getUserFromRequest(request);
+    if (!user || !user.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const action = body.action;
 
     let submission;
     switch (action) {
       case 'submit':
-        submission = await submissionService.submitSubmission(params.id);
+        submission = await submissionService.submitSubmission(params.id, user.email);
         break;
       case 'approve':
-        submission = await submissionService.approveSubmission(params.id);
+        submission = await submissionService.approveSubmission(params.id, user.email);
         break;
       case 'reject':
-        submission = await submissionService.rejectSubmission(params.id);
+        submission = await submissionService.rejectSubmission(params.id, user.email);
         break;
       default:
         return NextResponse.json(

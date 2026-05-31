@@ -135,7 +135,9 @@ export default function SubmissionDetailPage() {
     // Fetch submission data from API
     const fetchSubmission = async () => {
       try {
-        const response = await fetch(`/api/submissions/${id}`);
+        const response = await fetch(`/api/submissions/${id}`, {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
         if (!response.ok) {
           throw new Error('Failed to fetch submission');
         }
@@ -163,6 +165,7 @@ export default function SubmissionDetailPage() {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include', // Include credentials (cookies) in the request
           body: JSON.stringify({
             ...formData,
             pengajuan: formData.pengajuan // Using renamed field
@@ -180,6 +183,7 @@ export default function SubmissionDetailPage() {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include', // Include credentials (cookies) in the request
           body: JSON.stringify({
             ...formData,
             pengajuan: formData.pengajuan // Using renamed field
@@ -193,7 +197,9 @@ export default function SubmissionDetailPage() {
       }
       
       // Refresh the submission data
-      const refreshResponse = await fetch(`/api/submissions/${id}`);
+      const refreshResponse = await fetch(`/api/submissions/${id}`, {
+        credentials: 'include' // Include credentials (cookies) in the request
+      });
       if (!refreshResponse.ok) {
         throw new Error('Failed to refresh submission');
       }
@@ -219,6 +225,7 @@ export default function SubmissionDetailPage() {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include', // Include credentials (cookies) in the request
           body: JSON.stringify({
             ...formData
           })
@@ -230,7 +237,9 @@ export default function SubmissionDetailPage() {
         }
         
         // Refresh the submission data
-        const refreshResponse = await fetch(`/api/submissions/${id}`);
+        const refreshResponse = await fetch(`/api/submissions/${id}`, {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
         if (!refreshResponse.ok) {
           throw new Error('Failed to refresh submission');
         }
@@ -255,6 +264,7 @@ export default function SubmissionDetailPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include credentials (cookies) in the request
         body: JSON.stringify({
           action: 'approve'
         })
@@ -266,7 +276,9 @@ export default function SubmissionDetailPage() {
       }
       
       // Refresh the submission data
-      const refreshResponse = await fetch(`/api/submissions/${id}`);
+      const refreshResponse = await fetch(`/api/submissions/${id}`, {
+        credentials: 'include' // Include credentials (cookies) in the request
+      });
       if (!refreshResponse.ok) {
         throw new Error('Failed to refresh submission');
       }
@@ -288,6 +300,7 @@ export default function SubmissionDetailPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include credentials (cookies) in the request
         body: JSON.stringify({
           action: 'reject'
         })
@@ -299,7 +312,9 @@ export default function SubmissionDetailPage() {
       }
       
       // Refresh the submission data
-      const refreshResponse = await fetch(`/api/submissions/${id}`);
+      const refreshResponse = await fetch(`/api/submissions/${id}`, {
+        credentials: 'include' // Include credentials (cookies) in the request
+      });
       if (!refreshResponse.ok) {
         throw new Error('Failed to refresh submission');
       }
@@ -327,6 +342,7 @@ export default function SubmissionDetailPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include credentials (cookies) in the request
         body: JSON.stringify({
           action: 'resolve'
         })
@@ -338,7 +354,9 @@ export default function SubmissionDetailPage() {
       }
       
       // Refresh the submission data
-      const refreshResponse = await fetch(`/api/submissions/${id}`);
+      const refreshResponse = await fetch(`/api/submissions/${id}`, {
+        credentials: 'include' // Include credentials (cookies) in the request
+      });
       if (!refreshResponse.ok) {
         throw new Error('Failed to refresh submission');
       }
@@ -358,6 +376,7 @@ export default function SubmissionDetailPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include credentials (cookies) in the request
         body: JSON.stringify({
           action: 'approve'
         })
@@ -369,7 +388,9 @@ export default function SubmissionDetailPage() {
       }
       
       // Refresh the submission data
-      const refreshResponse = await fetch(`/api/submissions/${id}`);
+      const refreshResponse = await fetch(`/api/submissions/${id}`, {
+        credentials: 'include' // Include credentials (cookies) in the request
+      });
       if (!refreshResponse.ok) {
         throw new Error('Failed to refresh submission');
       }
@@ -391,6 +412,7 @@ export default function SubmissionDetailPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include credentials (cookies) in the request
         body: JSON.stringify({
           action: 'reject'
         })
@@ -402,7 +424,9 @@ export default function SubmissionDetailPage() {
       }
       
       // Refresh the submission data
-      const refreshResponse = await fetch(`/api/submissions/${id}`);
+      const refreshResponse = await fetch(`/api/submissions/${id}`, {
+        credentials: 'include' // Include credentials (cookies) in the request
+      });
       if (!refreshResponse.ok) {
         throw new Error('Failed to refresh submission');
       }
@@ -430,6 +454,7 @@ export default function SubmissionDetailPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include credentials (cookies) in the request
         body: JSON.stringify({
           note: editingNoteDetail.note
         })
@@ -441,7 +466,9 @@ export default function SubmissionDetailPage() {
       }
       
       // Refresh the submission data
-      const refreshResponse = await fetch(`/api/submissions/${id}`);
+      const refreshResponse = await fetch(`/api/submissions/${id}`, {
+        credentials: 'include' // Include credentials (cookies) in the request
+      });
       if (!refreshResponse.ok) {
         throw new Error('Failed to refresh submission');
       }

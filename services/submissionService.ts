@@ -86,6 +86,89 @@ export class SubmissionService {
     };
   }
 
+  // New method to get pending records with filters and pagination
+  async getPendingRecordsWithFilters(
+    isActive?: boolean,
+    searchTerm?: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<PaginatedResult<any>> {
+    const skip = (page - 1) * limit;
+    
+    // Build where clause based on filters
+    const whereClause: any = {};
+    
+    if (isActive !== undefined) {
+      whereClause.isActive = isActive;
+    }
+    
+    if (searchTerm) {
+      whereClause.OR = [
+        {
+          pendingType: {
+            contains: searchTerm,
+            mode: 'insensitive',
+          },
+        },
+        {
+          pendingNote: {
+            contains: searchTerm,
+            mode: 'insensitive',
+          },
+        },
+        {
+          submissionDetail: {
+            submission: {
+              submissionNumber: {
+                contains: searchTerm,
+                mode: 'insensitive',
+              },
+            },
+          },
+        },
+        {
+          submissionDetail: {
+            submission: {
+              patient: {
+                patientName: {
+                  contains: searchTerm,
+                  mode: 'insensitive',
+                },
+              },
+            },
+          },
+        },
+        {
+          submissionDetail: {
+            submission: {
+              payer: {
+                payerName: {
+                  contains: searchTerm,
+                  mode: 'insensitive',
+                },
+              },
+            },
+          },
+        },
+      ];
+    }
+
+    const [pendingRecords, totalCount] = await Promise.all([
+      pendingHistoryRepo.findWithWhereClause(whereClause, skip, limit),
+      pendingHistoryRepo.countWithWhereClause(whereClause),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return {
+      data: pendingRecords,
+      total: totalCount,
+      page,
+      limit,
+      totalPages,
+    };
+  }
+
   async getSubmissionById(id: string) {
     return await submissionRepo.findById(id);
   }
@@ -95,7 +178,7 @@ export class SubmissionService {
     patientId: string;
     roomId: string;
     payerId: string;
-  }) {
+  }, userEmail: string) {
     const submission = await submissionRepo.create(data);
     
     // Log the creation
@@ -104,7 +187,7 @@ export class SubmissionService {
       actionType: 'CREATE_SUBMISSION',
       referenceId: submission.id,
       description: `Created new submission ${submission.submissionNumber}`,
-      createdBy: 'system' // In real app, this would come from auth context
+      createdBy: userEmail
     });
     
     return submission;
@@ -116,7 +199,7 @@ export class SubmissionService {
     roomId: string;
     payerId: string;
     status: SubmissionStatus;
-  }>) {
+  }>, userEmail: string) {
     const submission = await submissionRepo.update(id, data);
     
     // Log the update
@@ -125,13 +208,13 @@ export class SubmissionService {
       actionType: 'UPDATE_SUBMISSION',
       referenceId: submission.id,
       description: `Updated submission ${submission.submissionNumber}`,
-      createdBy: 'system' // In real app, this would come from auth context
+      createdBy: userEmail
     });
     
     return submission;
   }
 
-  async submitSubmission(id: string) {
+  async submitSubmission(id: string, userEmail: string) {
     const submission = await submissionRepo.updateStatus(id, SubmissionStatus.SUBMITTED);
     
     // Log the submission
@@ -140,13 +223,13 @@ export class SubmissionService {
       actionType: 'SUBMIT_SUBMISSION',
       referenceId: submission.id,
       description: `Submitted submission ${submission.submissionNumber}`,
-      createdBy: 'system' // In real app, this would come from auth context
+      createdBy: userEmail
     });
     
     return submission;
   }
 
-  async approveSubmission(id: string) {
+  async approveSubmission(id: string, userEmail: string) {
     const submission = await submissionRepo.updateStatus(id, SubmissionStatus.APPROVED);
     
     // Log the approval
@@ -155,13 +238,13 @@ export class SubmissionService {
       actionType: 'APPROVE_SUBMISSION',
       referenceId: submission.id,
       description: `Approved submission ${submission.submissionNumber}`,
-      createdBy: 'system' // In real app, this would come from auth context
+      createdBy: userEmail
     });
     
     return submission;
   }
 
-  async rejectSubmission(id: string) {
+  async rejectSubmission(id: string, userEmail: string) {
     const submission = await submissionRepo.updateStatus(id, SubmissionStatus.REJECTED);
     
     // Log the rejection
@@ -170,13 +253,13 @@ export class SubmissionService {
       actionType: 'REJECT_SUBMISSION',
       referenceId: submission.id,
       description: `Rejected submission ${submission.submissionNumber}`,
-      createdBy: 'system' // In real app, this would come from auth context
+      createdBy: userEmail
     });
     
     return submission;
   }
 
-  async deleteSubmission(id: string) {
+  async deleteSubmission(id: string, userEmail: string) {
     const submission = await submissionRepo.findById(id);
     if (!submission) {
       throw new Error('Submission not found');
@@ -190,7 +273,7 @@ export class SubmissionService {
       actionType: 'DELETE_SUBMISSION',
       referenceId: id,
       description: `Deleted submission ${submission.submissionNumber}`,
-      createdBy: 'system' // In real app, this would come from auth context
+      createdBy: userEmail
     });
   }
 
@@ -198,7 +281,7 @@ export class SubmissionService {
     submissionType: string;
     pengajuan: string; // Renamed from submissionValue
     note?: string;
-  }) {
+  }, userEmail: string) {
     const detail = await submissionDetailRepo.create({
       submissionId,
       submissionType: data.submissionType,
@@ -208,6 +291,15 @@ export class SubmissionService {
     
     // Check if submission should be marked as PENDING due to active pending records
     await this._updateSubmissionStatusBasedOnPending(submissionId);
+    
+    // Log the addition
+    await auditLogRepo.create({
+      moduleName: 'Submissions',
+      actionType: 'ADD_SUBMISSION_DETAIL',
+      referenceId: detail.id,
+      description: `Added submission detail to submission ${detail.submission.submissionNumber}`,
+      createdBy: userEmail
+    });
     
     return detail;
   }
@@ -220,22 +312,31 @@ export class SubmissionService {
     submissionType: string;
     pengajuan: string; // Renamed from submissionValue
     note?: string;
-  }>) {
+  }>, userEmail: string) {
     const detail = await submissionDetailRepo.update(id, {
       submissionType: data.submissionType,
       pengajuan: data.pengajuan, // Renamed field
       note: data.note
     });
     
-    // Check if submission should be marked as PENDING due to active pending records
     if (detail) {
+      // Log the update
+      await auditLogRepo.create({
+        moduleName: 'Submissions',
+        actionType: 'UPDATE_SUBMISSION_DETAIL',
+        referenceId: detail.id,
+        description: `Updated submission detail in submission ${detail.submission.submissionNumber}`,
+        createdBy: userEmail
+      });
+    
+      // Check if submission should be marked as PENDING due to active pending records
       await this._updateSubmissionStatusBasedOnPending(detail.submissionId);
     }
     
     return detail;
   }
 
-  async deleteSubmissionDetail(id: string) {
+  async deleteSubmissionDetail(id: string, userEmail: string) {
     const detail = await submissionDetailRepo.findById(id);
     if (!detail) {
       throw new Error('Submission detail not found');
@@ -251,49 +352,53 @@ export class SubmissionService {
       moduleName: 'Submissions',
       actionType: 'DELETE_SUBMISSION_DETAIL',
       referenceId: detail.submissionId,
-      description: `Deleted submission detail from submission`,
-      createdBy: 'system' // In real app, this would come from auth context
+      description: `Deleted submission detail from submission ${detail.submission.submissionNumber}`,
+      createdBy: userEmail
     });
   }
 
-  async approveSubmissionDetail(detailId: string) {
+  async approveSubmissionDetail(detailId: string, userEmail: string) {
     const detail = await submissionDetailRepo.update(detailId, {
       status: 'APPROVED',
       approvedAt: new Date()
     });
     
     // Update submission status based on all details
-    await this._updateSubmissionStatusBasedOnDetails(detail!.submissionId);
-    
-    // Log the approval
-    await auditLogRepo.create({
-      moduleName: 'Submissions',
-      actionType: 'APPROVE_SUBMISSION_DETAIL',
-      referenceId: detailId,
-      description: `Approved submission detail`,
-      createdBy: 'system' // In real app, this would come from auth context
-    });
+    if (detail) {
+      await this._updateSubmissionStatusBasedOnDetails(detail.submissionId);
+      
+      // Log the approval
+      await auditLogRepo.create({
+        moduleName: 'Submissions',
+        actionType: 'APPROVE_SUBMISSION_DETAIL',
+        referenceId: detailId,
+        description: `Approved submission detail in submission ${detail.submission.submissionNumber}`,
+        createdBy: userEmail
+      });
+    }
     
     return detail;
   }
 
-  async rejectSubmissionDetail(detailId: string) {
+  async rejectSubmissionDetail(detailId: string, userEmail: string) {
     const detail = await submissionDetailRepo.update(detailId, {
       status: 'REJECTED',
       rejectedAt: new Date()
     });
     
     // Update submission status based on all details
-    await this._updateSubmissionStatusBasedOnDetails(detail!.submissionId);
-    
-    // Log the rejection
-    await auditLogRepo.create({
-      moduleName: 'Submissions',
-      actionType: 'REJECT_SUBMISSION_DETAIL',
-      referenceId: detailId,
-      description: `Rejected submission detail`,
-      createdBy: 'system' // In real app, this would come from auth context
-    });
+    if (detail) {
+      await this._updateSubmissionStatusBasedOnDetails(detail.submissionId);
+      
+      // Log the rejection
+      await auditLogRepo.create({
+        moduleName: 'Submissions',
+        actionType: 'REJECT_SUBMISSION_DETAIL',
+        referenceId: detailId,
+        description: `Rejected submission detail in submission ${detail.submission.submissionNumber}`,
+        createdBy: userEmail
+      });
+    }
     
     return detail;
   }
@@ -301,7 +406,7 @@ export class SubmissionService {
   async addPendingRecord(submissionDetailId: string, data: {
     pendingType: string;
     pendingNote?: string;
-  }) {
+  }, userEmail: string) {
     const pending = await pendingHistoryRepo.create({
       submissionDetailId,
       pendingType: data.pendingType, // Use string directly, no enum conversion needed
@@ -320,14 +425,14 @@ export class SubmissionService {
         actionType: 'ADD_PENDING',
         referenceId: submissionDetail.submissionId,
         description: `Added pending record for submission detail in submission ${submissionDetail.submission.submissionNumber}`,
-        createdBy: 'system' // In real app, this would come from auth context
+        createdBy: userEmail
       });
     }
     
     return pending;
   }
 
-  async resolvePendingRecord(pendingId: string) {
+  async resolvePendingRecord(pendingId: string, userEmail: string) {
     const pending = await pendingHistoryRepo.resolvePending(pendingId);
     
     // Find the submission detail and its parent submission
@@ -342,7 +447,7 @@ export class SubmissionService {
         actionType: 'RESOLVE_PENDING',
         referenceId: submissionDetail.submissionId,
         description: `Resolved pending record for submission detail in submission ${submissionDetail.submission.submissionNumber}`,
-        createdBy: 'system' // In real app, this would come from auth context
+        createdBy: userEmail
       });
     }
     

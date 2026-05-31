@@ -1,6 +1,8 @@
 import { RoomRepository } from './repositories/roomRepository';
+import { AuditLogRepository } from './repositories/auditLogRepository';
 
 const roomRepo = new RoomRepository();
+const auditLogRepo = new AuditLogRepository();
 
 export interface RoomFilters {
   roomNumber?: string;
@@ -73,19 +75,55 @@ export class RoomService {
     roomNumber: string;
     bedNumber: number;
     roomClass: string;
-  }) {
-    return await roomRepo.create(data);
+  }, userEmail: string) {
+    const room = await roomRepo.create(data);
+    
+    // Log the creation
+    await auditLogRepo.create({
+      moduleName: 'Rooms',
+      actionType: 'CREATE_ROOM',
+      referenceId: room.id,
+      description: `Created new room ${room.roomNumber} with class ${room.roomClass}`,
+      createdBy: userEmail
+    });
+    
+    return room;
   }
 
   async updateRoom(id: string, data: {
     roomNumber: string;
     bedNumber: number;
     roomClass: string;
-  }) {
-    return await roomRepo.update(id, data);
+  }, userEmail: string) {
+    const room = await roomRepo.update(id, data);
+    
+    // Log the update
+    await auditLogRepo.create({
+      moduleName: 'Rooms',
+      actionType: 'UPDATE_ROOM',
+      referenceId: room.id,
+      description: `Updated room ${room.roomNumber}`,
+      createdBy: userEmail
+    });
+    
+    return room;
   }
 
-  async deleteRoom(id: string) {
-    return await roomRepo.delete(id);
+  async deleteRoom(id: string, userEmail: string) {
+    const room = await roomRepo.findById(id);
+    if (!room) {
+      throw new Error('Room not found');
+    }
+    
+    await roomRepo.delete(id);
+    
+    // Log the deletion
+    await auditLogRepo.create({
+      moduleName: 'Rooms',
+      actionType: 'DELETE_ROOM',
+      referenceId: id,
+      description: `Deleted room ${room.roomNumber}`,
+      createdBy: userEmail
+    });
   }
 }

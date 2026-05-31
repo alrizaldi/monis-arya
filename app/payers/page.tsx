@@ -89,7 +89,9 @@ export default function PayersPage() {
           queryParams.append('payerName', filters.payerName);
         }
 
-        const response = await fetch(`/api/payers?${queryParams}`);
+        const response = await fetch(`/api/payers?${queryParams}`, {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
         if (!response.ok) {
           throw new Error('Failed to fetch payers');
         }
@@ -124,6 +126,7 @@ export default function PayersPage() {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include', // Include credentials (cookies) in the request
           body: JSON.stringify({
             payerName: data.payerName
           }),
@@ -144,7 +147,9 @@ export default function PayersPage() {
           queryParams.append('payerName', filters.payerName);
         }
 
-        const refreshResponse = await fetch(`/api/payers?${queryParams}`);
+        const refreshResponse = await fetch(`/api/payers?${queryParams}`, {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
         if (!refreshResponse.ok) {
           throw new Error('Failed to refresh payers');
         }
@@ -164,6 +169,7 @@ export default function PayersPage() {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include', // Include credentials (cookies) in the request
           body: JSON.stringify({
             payerName: data.payerName
           }),
@@ -184,7 +190,9 @@ export default function PayersPage() {
           queryParams.append('payerName', filters.payerName);
         }
 
-        const refreshResponse = await fetch(`/api/payers?${queryParams}`);
+        const refreshResponse = await fetch(`/api/payers?${queryParams}`, {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
         if (!refreshResponse.ok) {
           throw new Error('Failed to refresh payers');
         }
@@ -223,6 +231,7 @@ export default function PayersPage() {
       try {
         const response = await fetch(`/api/payers/${id}`, {
           method: 'DELETE',
+          credentials: 'include' // Include credentials (cookies) in the request
         });
         
         if (!response.ok) {
@@ -239,7 +248,9 @@ export default function PayersPage() {
           queryParams.append('payerName', filters.payerName);
         }
 
-        const refreshResponse = await fetch(`/api/payers?${queryParams}`);
+        const refreshResponse = await fetch(`/api/payers?${queryParams}`, {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
         if (!refreshResponse.ok) {
           throw new Error('Failed to refresh payers');
         }

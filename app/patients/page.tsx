@@ -116,7 +116,9 @@ export default function PatientsPage() {
           queryParams.append('birthDate', filters.birthDate);
         }
 
-        const response = await fetch(`/api/patients?${queryParams}`);
+        const response = await fetch(`/api/patients?${queryParams}`, {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
         if (!response.ok) {
           throw new Error('Failed to fetch patients');
         }
@@ -151,6 +153,7 @@ export default function PatientsPage() {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include', // Include credentials (cookies) in the request
           body: JSON.stringify({
             medicalRecordNumber: data.medicalRecordNumber,
             patientName: data.patientName,
@@ -183,7 +186,9 @@ export default function PatientsPage() {
           queryParams.append('birthDate', filters.birthDate);
         }
 
-        const refreshResponse = await fetch(`/api/patients?${queryParams}`);
+        const refreshResponse = await fetch(`/api/patients?${queryParams}`, {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
         if (!refreshResponse.ok) {
           throw new Error('Failed to refresh patients');
         }
@@ -203,6 +208,7 @@ export default function PatientsPage() {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include', // Include credentials (cookies) in the request
           body: JSON.stringify({
             medicalRecordNumber: data.medicalRecordNumber,
             patientName: data.patientName,
@@ -235,7 +241,9 @@ export default function PatientsPage() {
           queryParams.append('birthDate', filters.birthDate);
         }
 
-        const refreshResponse = await fetch(`/api/patients?${queryParams}`);
+        const refreshResponse = await fetch(`/api/patients?${queryParams}`, {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
         if (!refreshResponse.ok) {
           throw new Error('Failed to refresh patients');
         }
@@ -280,6 +288,7 @@ export default function PatientsPage() {
       try {
         const response = await fetch(`/api/patients/${id}`, {
           method: 'DELETE',
+          credentials: 'include' // Include credentials (cookies) in the request
         });
         
         if (!response.ok) {
@@ -305,7 +314,9 @@ export default function PatientsPage() {
           queryParams.append('birthDate', filters.birthDate);
         }
 
-        const refreshResponse = await fetch(`/api/patients?${queryParams}`);
+        const refreshResponse = await fetch(`/api/patients?${queryParams}`, {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
         if (!refreshResponse.ok) {
           throw new Error('Failed to refresh patients');
         }

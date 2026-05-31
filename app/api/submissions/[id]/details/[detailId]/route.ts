@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SubmissionService } from '@/services/submissionService';
+import { getUserFromRequest } from '@/lib/authUtils';
 
 const submissionService = new SubmissionService();
 
@@ -28,6 +29,11 @@ export async function PUT(
   { params }: { params: { id: string; detailId: string } }
 ) {
   try {
+    const user = await getUserFromRequest(request);
+    if (!user || !user.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     
     // Prepare update data with only provided fields
@@ -47,7 +53,7 @@ export async function PUT(
       updateData.note = body.note;
     }
     
-    const detail = await submissionService.updateSubmissionDetail(params.detailId, updateData);
+    const detail = await submissionService.updateSubmissionDetail(params.detailId, updateData, user.email);
     
     return NextResponse.json(detail, { status: 200 });
   } catch (error: any) {
@@ -63,13 +69,18 @@ export async function PATCH(
   { params }: { params: { id: string; detailId: string } }
 ) {
   try {
+    const user = await getUserFromRequest(request);
+    if (!user || !user.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     
     if (body.action === 'approve') {
-      const detail = await submissionService.approveSubmissionDetail(params.detailId);
+      const detail = await submissionService.approveSubmissionDetail(params.detailId, user.email);
       return NextResponse.json(detail, { status: 200 });
     } else if (body.action === 'reject') {
-      const detail = await submissionService.rejectSubmissionDetail(params.detailId);
+      const detail = await submissionService.rejectSubmissionDetail(params.detailId, user.email);
       return NextResponse.json(detail, { status: 200 });
     } else {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
@@ -87,7 +98,12 @@ export async function DELETE(
   { params }: { params: { id: string; detailId: string } }
 ) {
   try {
-    await submissionService.deleteSubmissionDetail(params.detailId);
+    const user = await getUserFromRequest(request);
+    if (!user || !user.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await submissionService.deleteSubmissionDetail(params.detailId, user.email);
     
     return NextResponse.json({ message: 'Submission detail deleted successfully' }, { status: 200 });
   } catch (error: any) {

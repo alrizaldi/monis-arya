@@ -8,9 +8,17 @@ export class PendingHistoryRepository {
       include: {
         submissionDetail: {
           include: {
-            submission: true
+            submission: {
+              include: {
+                patient: true,
+                payer: true
+              }
+            }
           }
         }
+      },
+      orderBy: {
+        createdAt: 'desc'
       }
     });
   }
@@ -21,7 +29,12 @@ export class PendingHistoryRepository {
       include: {
         submissionDetail: {
           include: {
-            submission: true
+            submission: {
+              include: {
+                patient: true,
+                payer: true
+              }
+            }
           }
         }
       }
@@ -34,9 +47,35 @@ export class PendingHistoryRepository {
       include: {
         submissionDetail: {
           include: {
-            submission: true
+            submission: {
+              include: {
+                patient: true,
+                payer: true
+              }
+            }
           }
         }
+      }
+    });
+  }
+
+  async findByIsActive(isActive: boolean) {
+    return await prisma.pendingHistory.findMany({
+      where: { isActive },
+      include: {
+        submissionDetail: {
+          include: {
+            submission: {
+              include: {
+                patient: true,
+                payer: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
       }
     });
   }
@@ -50,12 +89,18 @@ export class PendingHistoryRepository {
       data: {
         submissionDetailId: data.submissionDetailId,
         pendingType: data.pendingType, // Just use the string directly
-        pendingNote: data.pendingNote
+        pendingNote: data.pendingNote,
+        isActive: true // New pending records are active by default
       },
       include: {
         submissionDetail: {
           include: {
-            submission: true
+            submission: {
+              include: {
+                patient: true,
+                payer: true
+              }
+            }
           }
         }
       }
@@ -77,7 +122,12 @@ export class PendingHistoryRepository {
       include: {
         submissionDetail: {
           include: {
-            submission: true
+            submission: {
+              include: {
+                patient: true,
+                payer: true
+              }
+            }
           }
         }
       }
@@ -94,7 +144,12 @@ export class PendingHistoryRepository {
       include: {
         submissionDetail: {
           include: {
-            submission: true
+            submission: {
+              include: {
+                patient: true,
+                payer: true
+              }
+            }
           }
         }
       }
@@ -104,6 +159,35 @@ export class PendingHistoryRepository {
   async delete(id: string) {
     return await prisma.pendingHistory.delete({
       where: { id }
+    });
+  }
+  
+  async findWithWhereClause(whereClause: any, skip: number, limit: number) {
+    return await prisma.pendingHistory.findMany({
+      where: whereClause,
+      include: {
+        submissionDetail: {
+          include: {
+            submission: {
+              include: {
+                patient: true,
+                payer: true
+              }
+            }
+          }
+        }
+      },
+      skip,
+      take: limit,
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+  }
+  
+  async countWithWhereClause(whereClause: any) {
+    return await prisma.pendingHistory.count({
+      where: whereClause
     });
   }
 }

@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2, Search, Filter, Clock, CheckCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Filter, Clock, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -36,95 +36,240 @@ const pendingSchema = z.object({
 
 type PendingFormValues = z.infer<typeof pendingSchema>;
 
-// Mock data for demonstration
-const mockPayers = [
-  { id: '1', payerName: 'BPJS Kesehatan' },
-  { id: '2', payerName: 'Asuransi Swasta A' },
-];
+// Define types for pending records
+type PendingRecord = {
+  id: string;
+  pendingType: string;
+  pendingNote?: string;
+  isActive: boolean;
+  createdAt: Date;
+  resolvedAt?: Date;
+  submissionDetail: {
+    submission: {
+      submissionNumber: string;
+      patient: {
+        patientName: string;
+      };
+      payer: {
+        payerName: string;
+      };
+    };
+  };
+};
 
-const mockPendingRecords = [
-  { id: '1', submissionNumber: 'SUB-001', patient: 'John Doe', payer: 'BPJS Kesehatan', pendingType: 'Medication Approval', pendingDate: '2023-05-01', duration: 5, status: 'active' },
-  { id: '2', submissionNumber: 'SUB-002', patient: 'Jane Smith', payer: 'Asuransi Swasta A', pendingType: 'Lab Test', pendingDate: '2023-05-02', duration: 3, status: 'active' },
-  { id: '3', submissionNumber: 'SUB-003', patient: 'Robert Johnson', payer: 'BPJS Kesehatan', pendingType: 'Procedure', pendingDate: '2023-04-28', duration: 8, status: 'resolved' },
-  { id: '4', submissionNumber: 'SUB-004', patient: 'Emily Davis', payer: 'BPJS Kesehatan', pendingType: 'Room Upgrade', pendingDate: '2023-05-03', duration: 2, status: 'active' },
-];
+type PaginatedResult<T> = {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
 
 export default function PendingPage() {
-  const [pendingRecords, setPendingRecords] = useState(mockPendingRecords);
+  const [paginatedPendingRecords, setPaginatedPendingRecords] = useState<PaginatedResult<PendingRecord>>({
+    data: [],
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1
+  });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPending, setEditingPending] = useState<any>(null);
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterPayer, setFilterPayer] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  // Filter states
+  const [filters, setFilters] = useState({
+    status: 'all',
+    search: ''
+  });
+  
+  // Temporary filter values for input fields
+  const [tempFilters, setTempFilters] = useState({
+    status: 'all',
+    search: ''
+  });
+  const [loading, setLoading] = useState(true);
   
   const { register, handleSubmit, reset, formState: { errors } } = useForm<PendingFormValues>({
     resolver: zodResolver(pendingSchema),
   });
 
-  const filteredPendingRecords = pendingRecords.filter(record => {
-    const matchesStatus = filterStatus === 'all' || record.status === filterStatus;
-    const matchesPayer = filterPayer === 'all' || record.payer === filterPayer;
-    const matchesSearch = record.submissionNumber.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          record.patient.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          record.pendingType.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesStatus && matchesPayer && matchesSearch;
-  });
+  // Fetch pending records from API with pagination and filters
+  useEffect(() => {
+    const loadPendingRecords = async () => {
+      setLoading(true);
+      try {
+        const queryParams = new URLSearchParams({
+          page: paginatedPendingRecords.page.toString(),
+          limit: paginatedPendingRecords.limit.toString(),
+        });
+        
+        if (filters.status !== 'all') {
+          queryParams.append('status', filters.status);
+        }
+        if (filters.search) {
+          queryParams.append('search', filters.search);
+        }
 
-  const onSubmit = (data: PendingFormValues) => {
-    // For demo purposes, we'll just close the dialog
-    reset();
-    setIsDialogOpen(false);
-    setEditingPending(null);
+        const response = await fetch(`/api/pending?${queryParams}`, {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch pending records');
+        }
+        const result: PaginatedResult<PendingRecord> = await response.json();
+        
+        setPaginatedPendingRecords(result);
+      } catch (error) {
+        console.error("Error loading pending records:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPendingRecords();
+  }, [paginatedPendingRecords.page, filters]);
+  
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= paginatedPendingRecords.totalPages) {
+      setPaginatedPendingRecords(prev => ({
+        ...prev,
+        page: newPage
+      }));
+    }
   };
 
-  const handleResolve = (id: string) => {
-    // Mark pending as resolved
-    setPendingRecords(pendingRecords.map(record => 
-      record.id === id ? { ...record, status: 'resolved' } : record
-    ));
+  const handleResolve = async (id: string) => {
+    try {
+      const response = await fetch('/api/pending', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include credentials (cookies) in the request
+        body: JSON.stringify({ id }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to resolve pending record');
+      }
+
+      // Refresh the list
+      const queryParams = new URLSearchParams({
+        page: paginatedPendingRecords.page.toString(),
+        limit: paginatedPendingRecords.limit.toString(),
+      });
+      
+      if (filters.status !== 'all') {
+        queryParams.append('status', filters.status);
+      }
+      if (filters.search) {
+        queryParams.append('search', filters.search);
+      }
+
+      const refreshResponse = await fetch(`/api/pending?${queryParams}`, {
+        credentials: 'include' // Include credentials (cookies) in the request
+      });
+      if (!refreshResponse.ok) {
+        throw new Error('Failed to refresh pending records');
+      }
+      const result: PaginatedResult<PendingRecord> = await refreshResponse.json();
+      
+      setPaginatedPendingRecords(result);
+    } catch (error) {
+      console.error('Error resolving pending record:', error);
+    }
   };
+
+  const handleFilterChange = (field: keyof typeof tempFilters, value: string) => {
+    setTempFilters(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleApplyFilters = () => {
+    // Apply temporary filters to actual filters
+    setFilters(tempFilters);
+    // Reset to first page when filters change
+    setPaginatedPendingRecords(prev => ({
+      ...prev,
+      page: 1
+    }));
+  };
+
+  const handleClearFilters = () => {
+    // Clear all filters
+    setTempFilters({
+      status: 'all',
+      search: ''
+    });
+    setFilters({
+      status: 'all',
+      search: ''
+    });
+    // Reset to first page
+    setPaginatedPendingRecords(prev => ({
+      ...prev,
+      page: 1
+    }));
+  };
+
+  const filteredPendingRecords = paginatedPendingRecords.data;
 
   return (
     <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold text-gray-900">Pending Monitoring</h1>
-        
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex items-center border rounded-md px-3">
-            <Search className="h-4 w-4 text-gray-500" />
-            <input
-              type="text"
-              placeholder="Search pending records..."
-              className="ml-2 py-2 bg-transparent outline-none w-full sm:w-48"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+      </div>
+
+      {/* Filters - with button approach */}
+      <div className="bg-white shadow rounded-lg p-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="filter-search">Search</Label>
+            <div className="relative mt-1">
+              <Input
+                id="filter-search"
+                placeholder="Search by submission, patient, payer, or type..."
+                value={tempFilters.search}
+                onChange={(e) => handleFilterChange('search', e.target.value)}
+                className="pl-10 w-full"
+              />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            </div>
           </div>
           
-          <div className="flex gap-2">
+          <div>
+            <Label htmlFor="filter-status">Status</Label>
             <select
-              className="border rounded-md px-3 py-2"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
+              id="filter-status"
+              value={tempFilters.status}
+              onChange={(e) => handleFilterChange('status', e.target.value)}
+              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
               <option value="resolved">Resolved</option>
             </select>
-            
-            <select
-              className="border rounded-md px-3 py-2"
-              value={filterPayer}
-              onChange={(e) => setFilterPayer(e.target.value)}
-            >
-              <option value="all">All Payers</option>
-              {mockPayers.map(payer => (
-                <option key={payer.id} value={payer.payerName}>
-                  {payer.payerName}
-                </option>
-              ))}
-            </select>
           </div>
+        </div>
+        
+        {/* Filter Buttons */}
+        <div className="flex gap-2 mt-4">
+          <Button 
+            type="button" 
+            onClick={handleApplyFilters}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Search className="h-4 w-4 mr-2" />
+            Filter
+          </Button>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={handleClearFilters}
+          >
+            Clear Filters
+          </Button>
         </div>
       </div>
 
@@ -143,47 +288,136 @@ export default function PendingPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredPendingRecords.map((record) => (
-              <TableRow 
-                key={record.id} 
-                className={record.duration > 7 && record.status === 'active' ? 'bg-red-50' : ''}
-              >
-                <TableCell className="font-medium">{record.submissionNumber}</TableCell>
-                <TableCell>{record.patient}</TableCell>
-                <TableCell>{record.payer}</TableCell>
-                <TableCell>{record.pendingType}</TableCell>
-                <TableCell>{new Date(record.pendingDate).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  <span className={`${record.duration > 7 && record.status === 'active' ? 'text-red-600 font-bold' : ''}`}>
-                    {record.duration}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                    ${record.status === 'active' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
-                    {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <div className="flex space-x-2">
-                    {record.status === 'active' && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleResolve(record.id)}
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
+            {filteredPendingRecords.length > 0 ? (
+              filteredPendingRecords.map((record) => {
+                const createdDate = new Date(record.createdAt);
+                const currentDate = new Date();
+                const durationInDays = Math.floor((currentDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+                
+                return (
+                  <TableRow 
+                    key={record.id} 
+                    className={durationInDays > 7 && record.isActive ? 'bg-red-50' : ''}
+                  >
+                    <TableCell className="font-medium">{record.submissionDetail.submission.submissionNumber}</TableCell>
+                    <TableCell>{record.submissionDetail.submission.patient.patientName}</TableCell>
+                    <TableCell>{record.submissionDetail.submission.payer.payerName}</TableCell>
+                    <TableCell>{record.pendingType}</TableCell>
+                    <TableCell>{createdDate.toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <span className={`${durationInDays > 7 && record.isActive ? 'text-red-600 font-bold' : ''}`}>
+                        {durationInDays}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        ${record.isActive ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+                        {record.isActive ? 'Active' : 'Resolved'}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        {record.isActive && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleResolve(record.id)}
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={8}
+                  className="text-center py-8 text-gray-500"
+                >
+                  No pending records found
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>
       
-      {filteredPendingRecords.some(record => record.duration > 7 && record.status === 'active') && (
+      {/* Pagination Controls */}
+      <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
+        <div className="text-sm text-gray-700">
+          Showing <span className="font-medium">{(paginatedPendingRecords.page - 1) * paginatedPendingRecords.limit + 1}</span> to{' '}
+          <span className="font-medium">
+            {Math.min(paginatedPendingRecords.page * paginatedPendingRecords.limit, paginatedPendingRecords.total)}
+          </span>{' '}
+          of <span className="font-medium">{paginatedPendingRecords.total}</span> results
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(paginatedPendingRecords.page - 1)}
+            disabled={paginatedPendingRecords.page === 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          
+          <div className="flex items-center space-x-1">
+            {Array.from({ length: Math.min(5, paginatedPendingRecords.totalPages) }, (_, i) => {
+              let pageNum;
+              
+              if (paginatedPendingRecords.totalPages <= 5) {
+                // Show all pages if total is 5 or less
+                pageNum = i + 1;
+              } else if (paginatedPendingRecords.page <= 3) {
+                // Show first 5 pages if current page is near the beginning
+                pageNum = i + 1;
+              } else if (paginatedPendingRecords.page >= paginatedPendingRecords.totalPages - 2) {
+                // Show last 5 pages if current page is near the end
+                pageNum = paginatedPendingRecords.totalPages - 4 + i;
+              } else {
+                // Show pages around the current page
+                pageNum = paginatedPendingRecords.page - 2 + i;
+              }
+              
+              return (
+                <Button
+                  key={pageNum}
+                  variant={paginatedPendingRecords.page === pageNum ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handlePageChange(pageNum)}
+                  className={
+                    paginatedPendingRecords.page === pageNum 
+                      ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                      : ""
+                  }
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+          </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(paginatedPendingRecords.page + 1)}
+            disabled={paginatedPendingRecords.page === paginatedPendingRecords.totalPages}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      
+      {filteredPendingRecords.some(record => {
+        const createdDate = new Date(record.createdAt);
+        const currentDate = new Date();
+        const durationInDays = Math.floor((currentDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+        return durationInDays > 7 && record.isActive;
+      }) && (
         <div className="mt-6 bg-red-50 border-l-4 border-red-500 p-4">
           <div className="flex">
             <div className="flex-shrink-0">

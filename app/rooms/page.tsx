@@ -103,7 +103,9 @@ export default function RoomsPage() {
           queryParams.append('bedNumber', filters.bedNumber);
         }
 
-        const response = await fetch(`/api/rooms?${queryParams}`);
+        const response = await fetch(`/api/rooms?${queryParams}`, {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
         if (!response.ok) {
           throw new Error('Failed to fetch rooms');
         }
@@ -138,6 +140,7 @@ export default function RoomsPage() {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include', // Include credentials (cookies) in the request
           body: JSON.stringify({
             roomNumber: data.roomNumber,
             bedNumber: data.bedNumber,
@@ -166,7 +169,9 @@ export default function RoomsPage() {
           queryParams.append('bedNumber', filters.bedNumber);
         }
 
-        const refreshResponse = await fetch(`/api/rooms?${queryParams}`);
+        const refreshResponse = await fetch(`/api/rooms?${queryParams}`, {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
         if (!refreshResponse.ok) {
           throw new Error('Failed to refresh rooms');
         }
@@ -186,6 +191,7 @@ export default function RoomsPage() {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include', // Include credentials (cookies) in the request
           body: JSON.stringify({
             roomNumber: data.roomNumber,
             bedNumber: data.bedNumber,
@@ -214,7 +220,9 @@ export default function RoomsPage() {
           queryParams.append('bedNumber', filters.bedNumber);
         }
 
-        const refreshResponse = await fetch(`/api/rooms?${queryParams}`);
+        const refreshResponse = await fetch(`/api/rooms?${queryParams}`, {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
         if (!refreshResponse.ok) {
           throw new Error('Failed to refresh rooms');
         }
@@ -255,6 +263,7 @@ export default function RoomsPage() {
       try {
         const response = await fetch(`/api/rooms/${id}`, {
           method: 'DELETE',
+          credentials: 'include' // Include credentials (cookies) in the request
         });
         
         if (!response.ok) {
@@ -277,7 +286,9 @@ export default function RoomsPage() {
           queryParams.append('bedNumber', filters.bedNumber);
         }
 
-        const refreshResponse = await fetch(`/api/rooms?${queryParams}`);
+        const refreshResponse = await fetch(`/api/rooms?${queryParams}`, {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
         if (!refreshResponse.ok) {
           throw new Error('Failed to refresh rooms');
         }

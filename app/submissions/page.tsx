@@ -244,7 +244,9 @@ export default function SubmissionsPage() {
           }
         });
 
-        const response = await fetch(`/api/submissions?${queryParams}`);
+        const response = await fetch(`/api/submissions?${queryParams}`, {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
         if (!response.ok) {
           throw new Error('Failed to fetch submissions');
         }
@@ -272,21 +274,27 @@ export default function SubmissionsPage() {
     const loadDropdownData = async () => {
       try {
         // Load patients
-        const patientsResponse = await fetch('/api/patients');
+        const patientsResponse = await fetch('/api/patients', {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
         if (patientsResponse.ok) {
           const patientsResult = await patientsResponse.json();
           setPatients(Array.isArray(patientsResult) ? patientsResult : patientsResult.data || []);
         }
         
         // Load rooms
-        const roomsResponse = await fetch('/api/rooms');
+        const roomsResponse = await fetch('/api/rooms', {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
         if (roomsResponse.ok) {
           const roomsResult = await roomsResponse.json();
           setRooms(Array.isArray(roomsResult) ? roomsResult : roomsResult.data || []);
         }
         
         // Load payers
-        const payersResponse = await fetch('/api/payers');
+        const payersResponse = await fetch('/api/payers', {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
         if (payersResponse.ok) {
           const payersResult = await payersResponse.json();
           setPayers(Array.isArray(payersResult) ? payersResult : payersResult.data || []);
@@ -319,6 +327,7 @@ export default function SubmissionsPage() {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include', // Include credentials (cookies) in the request
           body: JSON.stringify({
             patientId: selectedPatientId,
             roomId: selectedRoomId,
@@ -344,7 +353,9 @@ export default function SubmissionsPage() {
           }
         });
 
-        const refreshResponse = await fetch(`/api/submissions?${queryParams}`);
+        const refreshResponse = await fetch(`/api/submissions?${queryParams}`, {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
         if (!refreshResponse.ok) {
           throw new Error('Failed to refresh submissions');
         }
@@ -364,6 +375,7 @@ export default function SubmissionsPage() {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include', // Include credentials (cookies) in the request
           body: JSON.stringify({
             submissionNumber: `SUB-${Date.now()}`, // Generate a unique number for demo
             patientId: selectedPatientId,
@@ -396,7 +408,9 @@ export default function SubmissionsPage() {
           queryParams.append('status', filters.status);
         }
 
-        const refreshResponse = await fetch(`/api/submissions?${queryParams}`);
+        const refreshResponse = await fetch(`/api/submissions?${queryParams}`, {
+          credentials: 'include' // Include credentials (cookies) in the request
+        });
         if (!refreshResponse.ok) {
           throw new Error('Failed to refresh submissions');
         }
