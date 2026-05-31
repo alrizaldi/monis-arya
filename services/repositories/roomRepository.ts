@@ -1,6 +1,5 @@
-import { PrismaClient, type Room } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { type Room } from '@prisma/client';
+import prisma from '@/lib/prisma';
 
 export class RoomRepository {
   async findAll() {
@@ -34,31 +33,27 @@ export class RoomRepository {
     roomNumber: string;
     bedNumber?: number;
     roomClass: string;
-    createdAt?: Date;
-    updatedAt?: Date;
   }) {
     return await prisma.room.create({
       data: {
         roomNumber: data.roomNumber,
         bedNumber: data.bedNumber,
-        roomClass: data.roomClass,
-        createdAt: data.createdAt || new Date(),
-        updatedAt: data.updatedAt || new Date()
+        roomClass: data.roomClass
       }
     });
   }
 
-  async update(id: string, data: Partial<{
+  async update(id: string, data: {
     roomNumber: string;
     bedNumber?: number;
     roomClass: string;
-    updatedAt: Date;
-  }>) {
+  }) {
     return await prisma.room.update({
       where: { id },
       data: {
-        ...data,
-        updatedAt: new Date()
+        roomNumber: data.roomNumber,
+        bedNumber: data.bedNumber,
+        roomClass: data.roomClass
       }
     });
   }

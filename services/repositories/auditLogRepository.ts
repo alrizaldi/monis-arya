@@ -1,6 +1,5 @@
-import { PrismaClient, type AuditLog } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { type AuditLog } from '@prisma/client';
+import prisma from '@/lib/prisma';
 
 export class AuditLogRepository {
   async findAll() {
@@ -161,5 +160,22 @@ export class AuditLogRepository {
       limit,
       totalPages
     };
+  }
+
+  async countByModule(moduleName: string) {
+    return await prisma.auditLog.count({
+      where: { moduleName }
+    });
+  }
+
+  async countByDateRange(startDate: Date, endDate: Date) {
+    return await prisma.auditLog.count({
+      where: {
+        createdAt: {
+          gte: startDate,
+          lte: endDate
+        }
+      }
+    });
   }
 }

@@ -1,13 +1,6 @@
 {
-  "/api/rooms/route": "app/api/rooms/route.js",
-  "/api/payers/route": "app/api/payers/route.js",
-  "/api/patients/route": "app/api/patients/route.js",
-  "/api/submissions/route": "app/api/submissions/route.js",
-  "/api/payers/[id]/route": "app/api/payers/[id]/route.js",
-  "/api/audit/route": "app/api/audit/route.js",
-  "/patients/page": "app/patients/page.js",
-  "/audit/page": "app/audit/page.js",
-  "/rooms/page": "app/rooms/page.js",
-  "/payers/page": "app/payers/page.js",
-  "/submissions/page": "app/submissions/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/login/page": "app/login/page.js",
+  "/api/dashboard/route": "app/api/dashboard/route.js",
+  "/dashboard/page": "app/dashboard/page.js"
 }

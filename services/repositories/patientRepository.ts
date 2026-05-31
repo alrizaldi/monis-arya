@@ -1,6 +1,8 @@
-import { PrismaClient, type Patient, Gender } from '@prisma/client';
+import { type Patient, Gender } from '@prisma/client';
+import prisma from '@/lib/prisma';
 
-const prisma = new PrismaClient();
+// Export the enum for use in other parts of the application
+export { Gender };
 
 export class PatientRepository {
   async findAll() {
@@ -24,6 +26,37 @@ export class PatientRepository {
     });
   }
 
+  /**
+   * Count patients by gender
+   * @param gender The gender to filter by
+   * @returns The number of patients of the specified gender
+   */
+  async countByGender(gender: Gender) {
+    return await prisma.patient.count({
+      where: {
+        gender: gender
+      }
+    });
+  }
+
+  /**
+   * Count patients created in the last specified number of days
+   * @param days Number of days to look back
+   * @returns The number of patients created in the last 'days' days
+   */
+  async countRecentPatients(days: number) {
+    const date = new Date();
+    date.setDate(date.getDate() - days);
+    
+    return await prisma.patient.count({
+      where: {
+        createdAt: {
+          gte: date
+        }
+      }
+    });
+  }
+
   async findById(id: string) {
     return await prisma.patient.findUnique({
       where: { id }
@@ -39,36 +72,32 @@ export class PatientRepository {
   async create(data: {
     medicalRecordNumber: string;
     patientName: string;
-    gender: string; // Accepting string and converting to enum
+    gender: string; // Will be converted to enum
     birthDate: Date;
-    createdAt?: Date;
-    updatedAt?: Date;
   }) {
     return await prisma.patient.create({
       data: {
         medicalRecordNumber: data.medicalRecordNumber,
         patientName: data.patientName,
         gender: data.gender as Gender, // Convert string to enum
-        birthDate: data.birthDate,
-        createdAt: data.createdAt || new Date(),
-        updatedAt: data.updatedAt || new Date()
+        birthDate: data.birthDate
       }
     });
   }
 
-  async update(id: string, data: Partial<{
+  async update(id: string, data: {
     medicalRecordNumber: string;
     patientName: string;
-    gender: string; // Accepting string and converting to enum
+    gender: string; // Will be converted to enum
     birthDate: Date;
-    updatedAt: Date;
-  }>) {
+  }) {
     return await prisma.patient.update({
       where: { id },
       data: {
-        ...data,
-        gender: data.gender ? data.gender as Gender : undefined, // Convert string to enum if provided
-        updatedAt: new Date()
+        medicalRecordNumber: data.medicalRecordNumber,
+        patientName: data.patientName,
+        gender: data.gender as Gender, // Convert string to enum
+        birthDate: data.birthDate
       }
     });
   }

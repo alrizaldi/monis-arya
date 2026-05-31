@@ -1,3 +1,4 @@
+README.md
 # Insurance Approval Monitoring System
 
 A full-stack internal web application for monitoring insurance approval submissions in hospitals.
@@ -21,8 +22,16 @@ A full-stack internal web application for monitoring insurance approval submissi
 - Master data management (patients, rooms, payers)
 - Submission tracking and approval workflow
 - Pending records monitoring
-- Audit logging system
+- Comprehensive audit logging system with user tracking
+- Secure API authentication using Supabase sessions
 - Responsive admin interface
+
+## Security & Authentication
+
+- **Secure API Routes**: All API routes require valid Supabase authentication sessions
+- **Audit Trail**: Every operation is logged with the actual authenticated user's email
+- **Session Management**: Automatic session handling via Supabase SSR integration
+- **Frontend Security**: All API calls include credentials to maintain authentication context
 
 ## Getting Started
 
@@ -67,7 +76,7 @@ The application will be available at http://localhost:3000
 
 ```
 ├── app/                    # Next.js App Router pages
-│   ├── api/               # API routes
+│   ├── api/               # API routes with authentication
 │   ├── dashboard/         # Dashboard page
 │   ├── patients/          # Patient management
 │   ├── rooms/             # Room management
@@ -79,8 +88,9 @@ The application will be available at http://localhost:3000
 ├── components/            # Reusable UI components
 │   └── ui/               # Base UI components
 ├── lib/                   # Utility functions
+│   ├── authUtils.ts       # Authentication utilities
 │   └── supabase/         # Supabase client setup
-├── services/              # Business logic layers
+├── services/              # Business logic layers with audit support
 │   └── repositories/     # Data access layer
 ├── prisma/                # Database schema and migrations
 └── public/                # Static assets
@@ -96,29 +106,43 @@ The application uses the following tables:
 - `submissions`: Insurance submission headers
 - `submission_details`: Details within a submission
 - `pending_histories`: Pending records for submission details
-- `audit_logs`: System activity logs
+- `audit_logs`: System activity logs with user tracking
 
 ## API Endpoints
 
-- `GET /api/patients` - Get all patients
-- `POST /api/patients` - Create a patient
-- `PUT /api/patients/[id]` - Update a patient
-- `DELETE /api/patients/[id]` - Delete a patient
+### Authentication & Security
+All API endpoints require valid authentication and automatically log operations with the authenticated user's email.
 
-- `GET /api/rooms` - Get all rooms
-- `POST /api/rooms` - Create a room
-- `PUT /api/rooms/[id]` - Update a room
-- `DELETE /api/rooms/[id]` - Delete a room
+- `GET /api/patients` - Get all patients (requires auth)
+- `POST /api/patients` - Create a patient (requires auth, logged with user)
+- `PUT /api/patients/[id]` - Update a patient (requires auth, logged with user)
+- `DELETE /api/patients/[id]` - Delete a patient (requires auth, logged with user)
 
-- `GET /api/payers` - Get all payers
-- `POST /api/payers` - Create a payer
-- `PUT /api/payers/[id]` - Update a payer
-- `DELETE /api/payers/[id]` - Delete a payer
+- `GET /api/rooms` - Get all rooms (requires auth)
+- `POST /api/rooms` - Create a room (requires auth, logged with user)
+- `PUT /api/rooms/[id]` - Update a room (requires auth, logged with user)
+- `DELETE /api/rooms/[id]` - Delete a room (requires auth, logged with user)
 
-- `GET /api/submissions` - Get all submissions
-- `POST /api/submissions` - Create a submission
-- `PUT /api/submissions/[id]` - Update a submission
-- `DELETE /api/submissions/[id]` - Delete a submission
+- `GET /api/payers` - Get all payers (requires auth)
+- `POST /api/payers` - Create a payer (requires auth, logged with user)
+- `PUT /api/payers/[id]` - Update a payer (requires auth, logged with user)
+- `DELETE /api/payers/[id]` - Delete a payer (requires auth, logged with user)
+
+- `GET /api/submissions` - Get all submissions (requires auth)
+- `POST /api/submissions` - Create a submission (requires auth, logged with user)
+- `PUT /api/submissions/[id]` - Update a submission (requires auth, logged with user)
+- `DELETE /api/submissions/[id]` - Delete a submission (requires auth, logged with user)
+
+- `GET /api/audit` - Get audit logs (requires auth)
+
+## Authentication Flow
+
+1. User authenticates via Supabase Auth
+2. Session tokens are stored in cookies
+3. Frontend API calls include `credentials: 'include'` to send cookies
+4. Backend API routes extract user from session using Supabase client
+5. User email is passed to service methods for audit logging
+6. All operations are recorded in audit logs with user identity
 
 ## Deployment
 

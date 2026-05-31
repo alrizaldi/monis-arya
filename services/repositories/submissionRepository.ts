@@ -1,7 +1,5 @@
-import { PrismaClient, type Submission, SubmissionStatus } from '@prisma/client';
-
-// 创建一个单一的 PrismaClient 实例
-const prisma = new PrismaClient();
+import { type Submission, SubmissionStatus } from '@prisma/client';
+import prisma from '@/lib/prisma';
 
 // Export the enum for use in other parts of the application
 export { SubmissionStatus };
@@ -153,6 +151,22 @@ export class SubmissionRepository {
     return await prisma.submission.update({
       where: { id },
       data: updateData,
+      include: {
+        patient: true,
+        room: true,
+        payer: true
+      }
+    });
+  }
+
+  async findWithDateRange(startDate: Date, endDate: Date) {
+    return await prisma.submission.findMany({
+      where: {
+        createdAt: {
+          gte: startDate,
+          lte: endDate
+        }
+      },
       include: {
         patient: true,
         room: true,

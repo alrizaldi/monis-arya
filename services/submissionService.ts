@@ -312,11 +312,17 @@ export class SubmissionService {
     submissionType: string;
     pengajuan: string; // Renamed from submissionValue
     note?: string;
+    status?: string;
+    approvedAt?: Date;
+    rejectedAt?: Date;
   }>, userEmail: string) {
     const detail = await submissionDetailRepo.update(id, {
       submissionType: data.submissionType,
       pengajuan: data.pengajuan, // Renamed field
-      note: data.note
+      note: data.note,
+      status: data.status,
+      approvedAt: data.approvedAt,
+      rejectedAt: data.rejectedAt
     });
     
     if (detail) {

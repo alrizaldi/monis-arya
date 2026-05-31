@@ -1,7 +1,5 @@
-import { PrismaClient, SubmissionType } from '@prisma/client';
-// Removed Decimal import since we're changing to string
-
-const prisma = new PrismaClient();
+import { type SubmissionDetail, SubmissionType } from '@prisma/client';
+import prisma from '@/lib/prisma';
 
 // Export the enum for use in other parts of the application
 export { SubmissionType };
@@ -10,7 +8,13 @@ export class SubmissionDetailRepository {
   async findAll() {
     return await prisma.submissionDetail.findMany({
       include: {
-        submission: true,
+        submission: {
+          include: {
+            patient: true,
+            room: true,
+            payer: true
+          }
+        },
         pendingHistories: true
       }
     });
@@ -20,7 +24,13 @@ export class SubmissionDetailRepository {
     return await prisma.submissionDetail.findUnique({
       where: { id },
       include: {
-        submission: true,
+        submission: {
+          include: {
+            patient: true,
+            room: true,
+            payer: true
+          }
+        },
         pendingHistories: true
       }
     });
@@ -30,7 +40,13 @@ export class SubmissionDetailRepository {
     return await prisma.submissionDetail.findMany({
       where: { submissionId },
       include: {
-        submission: true,
+        submission: {
+          include: {
+            patient: true,
+            room: true,
+            payer: true
+          }
+        },
         pendingHistories: true
       }
     });
@@ -38,33 +54,32 @@ export class SubmissionDetailRepository {
 
   async create(data: {
     submissionId: string;
-    submissionType: string; // Accepting string and converting to enum
-    pengajuan: string; // Renamed field
+    submissionType: string; // Will be converted to enum
+    pengajuan: string;
     note?: string;
-    status?: string;
-    approvedAt?: Date;
-    rejectedAt?: Date;
   }) {
     return await prisma.submissionDetail.create({
       data: {
         submissionId: data.submissionId,
         submissionType: data.submissionType as SubmissionType, // Convert string to enum
-        pengajuan: data.pengajuan, // Renamed field
-        note: data.note,
-        status: data.status || 'DRAFT', // Default to DRAFT
-        approvedAt: data.approvedAt,
-        rejectedAt: data.rejectedAt
+        pengajuan: data.pengajuan,
+        note: data.note
       },
       include: {
-        submission: true,
-        pendingHistories: true
+        submission: {
+          include: {
+            patient: true,
+            room: true,
+            payer: true
+          }
+        }
       }
     });
   }
 
   async update(id: string, data: Partial<{
-    submissionType: string; // Accepting string and converting to enum
-    pengajuan?: string; // Renamed field
+    submissionType: string; // Will be converted to enum
+    pengajuan: string;
     note?: string;
     status?: string;
     approvedAt?: Date;
@@ -74,14 +89,14 @@ export class SubmissionDetailRepository {
       where: { id },
       data: {
         ...data,
-        submissionType: data.submissionType ? data.submissionType as SubmissionType : undefined, // Convert string to enum if provided
-        pengajuan: data.pengajuan, // Renamed field
+        submissionType: data.submissionType ? data.submissionType as SubmissionType : undefined // Convert string to enum if provided
       },
       include: {
-        submission: true,
-        pendingHistories: {
-          where: {
-            isActive: true
+        submission: {
+          include: {
+            patient: true,
+            room: true,
+            payer: true
           }
         }
       }

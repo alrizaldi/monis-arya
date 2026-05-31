@@ -1,6 +1,5 @@
-import { PrismaClient, type PendingHistory } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { type PendingHistory } from '@prisma/client';
+import prisma from '@/lib/prisma';
 
 export class PendingHistoryRepository {
   async findAll() {
@@ -11,14 +10,12 @@ export class PendingHistoryRepository {
             submission: {
               include: {
                 patient: true,
+                room: true,
                 payer: true
               }
             }
           }
         }
-      },
-      orderBy: {
-        createdAt: 'desc'
       }
     });
   }
@@ -32,6 +29,7 @@ export class PendingHistoryRepository {
             submission: {
               include: {
                 patient: true,
+                room: true,
                 payer: true
               }
             }
@@ -50,86 +48,40 @@ export class PendingHistoryRepository {
             submission: {
               include: {
                 patient: true,
+                room: true,
                 payer: true
               }
             }
           }
         }
-      }
-    });
-  }
-
-  async findByIsActive(isActive: boolean) {
-    return await prisma.pendingHistory.findMany({
-      where: { isActive },
-      include: {
-        submissionDetail: {
-          include: {
-            submission: {
-              include: {
-                patient: true,
-                payer: true
-              }
-            }
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
       }
     });
   }
 
   async create(data: {
     submissionDetailId: string;
-    pendingType: string; // Accepting string directly since there's no enum
+    pendingType: string;
     pendingNote?: string;
   }) {
     return await prisma.pendingHistory.create({
       data: {
         submissionDetailId: data.submissionDetailId,
-        pendingType: data.pendingType, // Just use the string directly
-        pendingNote: data.pendingNote,
-        isActive: true // New pending records are active by default
-      },
-      include: {
-        submissionDetail: {
-          include: {
-            submission: {
-              include: {
-                patient: true,
-                payer: true
-              }
-            }
-          }
-        }
+        pendingType: data.pendingType,
+        pendingNote: data.pendingNote
       }
     });
   }
 
   async update(id: string, data: Partial<{
-    pendingType: string; // Accepting string directly since there's no enum
+    pendingType: string;
     pendingNote?: string;
     resolvedAt?: Date;
-    isActive?: boolean;
+    isActive: boolean;
   }>) {
     return await prisma.pendingHistory.update({
       where: { id },
       data: {
-        ...data,
-        pendingType: data.pendingType, // Just use the string directly
-      },
-      include: {
-        submissionDetail: {
-          include: {
-            submission: {
-              include: {
-                patient: true,
-                payer: true
-              }
-            }
-          }
-        }
+        ...data
       }
     });
   }
@@ -140,18 +92,6 @@ export class PendingHistoryRepository {
       data: {
         resolvedAt: new Date(),
         isActive: false
-      },
-      include: {
-        submissionDetail: {
-          include: {
-            submission: {
-              include: {
-                patient: true,
-                payer: true
-              }
-            }
-          }
-        }
       }
     });
   }
@@ -161,33 +101,34 @@ export class PendingHistoryRepository {
       where: { id }
     });
   }
-  
+
   async findWithWhereClause(whereClause: any, skip: number, limit: number) {
     return await prisma.pendingHistory.findMany({
       where: whereClause,
+      skip,
+      take: limit,
       include: {
         submissionDetail: {
           include: {
             submission: {
               include: {
                 patient: true,
+                room: true,
                 payer: true
               }
             }
           }
         }
       },
-      skip,
-      take: limit,
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: 'desc',
+      },
     });
   }
-  
+
   async countWithWhereClause(whereClause: any) {
     return await prisma.pendingHistory.count({
-      where: whereClause
+      where: whereClause,
     });
   }
 }

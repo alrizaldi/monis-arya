@@ -1,6 +1,5 @@
-import { PrismaClient, type Payer } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { type Payer } from '@prisma/client';
+import prisma from '@/lib/prisma';
 
 export class PayerRepository {
   async findAll() {
