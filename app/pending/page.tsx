@@ -21,11 +21,12 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2, Search, Filter, Clock, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Filter, Clock, CheckCircle, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import dayjs from 'dayjs';
+import * as XLSX from 'xlsx';
 
 // Define schema for pending form validation
 const pendingSchema = z.object({
@@ -91,6 +92,69 @@ export default function PendingPage() {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<PendingFormValues>({
     resolver: zodResolver(pendingSchema),
   });
+
+  // Function to export pending records to Excel
+  const handleExportExcel = async () => {
+    try {
+      // Fetch pending records with the same filters that are currently applied
+      const queryParams = new URLSearchParams({
+        limit: '10000', // Using a high limit to get all matching records
+      });
+      
+      // Add active filters to the query params
+      if (filters.status !== 'all') {
+        queryParams.append('status', filters.status);
+      }
+      if (filters.search) {
+        queryParams.append('search', filters.search);
+      }
+
+      const response = await fetch(`/api/pending?${queryParams}`, {
+        credentials: 'include' // Include credentials (cookies) in the request
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch pending records for export');
+      }
+
+      const allPendingRecords = await response.json();
+
+      // Format data for Excel export
+      const formattedData = allPendingRecords.data.map((record: any) => {
+        const createdDate = new Date(record.createdAt);
+        const currentDate = new Date();
+        const durationInDays = Math.floor((currentDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+
+        return {
+          'ID': record.id,
+          'Submission Number': record.submissionDetail.submission.submissionNumber,
+          'Patient': record.submissionDetail.submission.patient.patientName,
+          'Payer': record.submissionDetail.submission.payer.payerName,
+          'Pending Type': record.pendingType,
+          'Pending Note': record.pendingNote || '',
+          'Created Date': createdDate.toLocaleDateString(),
+          'Duration (Days)': durationInDays,
+          'Status': record.isActive ? 'Active' : 'Resolved',
+          'Resolved At': record.resolvedAt ? new Date(record.resolvedAt).toLocaleDateString() : '',
+          'Created At': new Date(record.createdAt).toLocaleDateString(),
+          'Updated At': new Date(record.updatedAt).toLocaleDateString(),
+        };
+      });
+
+      // Create worksheet and workbook
+      const worksheet = XLSX.utils.json_to_sheet(formattedData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Pending Records');
+
+      // Generate and download Excel file with timestamp
+      XLSX.writeFile(
+        workbook,
+        `pending_records_export_${new Date().toISOString().split("T")[0]}_${Date.now()}.xlsx`,
+      );
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      alert('Failed to export pending records to Excel. Please try again.');
+    }
+  };
 
   // Fetch pending records from API with pagination and filters
   useEffect(() => {
@@ -219,6 +283,13 @@ export default function PendingPage() {
     <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold text-gray-900">Pending Monitoring</h1>
+        <Button
+          onClick={handleExportExcel}
+          className="w-full sm:w-auto"
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Export to Excel
+        </Button>
       </div>
 
       {/* Filters - with button approach */}

@@ -21,10 +21,19 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+} from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import * as XLSX from "xlsx";
 
 // Define schema for patient form validation
 const patientSchema = z.object({
@@ -60,27 +69,28 @@ export default function PatientsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false); // State for form submission status
   const [pagination, setPagination] = useState({
     page: 1,
     totalPages: 1,
     total: 0,
-    limit: 10
+    limit: 10,
   });
-  
+
   // Filter states
   const [filters, setFilters] = useState({
-    medicalRecordNumber: '',
-    patientName: '',
-    gender: '',
-    birthDate: ''
+    medicalRecordNumber: "",
+    patientName: "",
+    gender: "",
+    birthDate: "",
   });
-  
+
   // Temporary filter values for input fields
   const [tempFilters, setTempFilters] = useState({
-    medicalRecordNumber: '',
-    patientName: '',
-    gender: '',
-    birthDate: ''
+    medicalRecordNumber: "",
+    patientName: "",
+    gender: "",
+    birthDate: "",
   });
 
   const {
@@ -102,34 +112,37 @@ export default function PatientsPage() {
           page: pagination.page.toString(),
           limit: pagination.limit.toString(),
         });
-        
+
         if (filters.medicalRecordNumber) {
-          queryParams.append('medicalRecordNumber', filters.medicalRecordNumber);
+          queryParams.append(
+            "medicalRecordNumber",
+            filters.medicalRecordNumber,
+          );
         }
         if (filters.patientName) {
-          queryParams.append('patientName', filters.patientName);
+          queryParams.append("patientName", filters.patientName);
         }
         if (filters.gender) {
-          queryParams.append('gender', filters.gender);
+          queryParams.append("gender", filters.gender);
         }
         if (filters.birthDate) {
-          queryParams.append('birthDate', filters.birthDate);
+          queryParams.append("birthDate", filters.birthDate);
         }
 
         const response = await fetch(`/api/patients?${queryParams}`, {
-          credentials: 'include' // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
         });
         if (!response.ok) {
-          throw new Error('Failed to fetch patients');
+          throw new Error("Failed to fetch patients");
         }
         const result: PaginatedResult<Patient> = await response.json();
-        
+
         setPatients(result.data);
         setPagination({
           page: result.page,
           totalPages: result.totalPages,
           total: result.total,
-          limit: result.limit
+          limit: result.limit,
         });
       } catch (error) {
         console.error("Error loading patients:", error);
@@ -145,15 +158,15 @@ export default function PatientsPage() {
     try {
       console.log("Saving patient:", data);
       let response;
-      
+
       if (editingPatient) {
         // Update existing patient
         response = await fetch(`/api/patients/${editingPatient.id}`, {
-          method: 'PUT',
+          method: "PUT",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
-          credentials: 'include', // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
           body: JSON.stringify({
             medicalRecordNumber: data.medicalRecordNumber,
             patientName: data.patientName,
@@ -161,54 +174,57 @@ export default function PatientsPage() {
             birthDate: new Date(data.birthDate),
           }),
         });
-        
+
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to update patient');
+          throw new Error(errorData.error || "Failed to update patient");
         }
-        
+
         // Refresh the patient list after update
         const queryParams = new URLSearchParams({
           page: pagination.page.toString(),
           limit: pagination.limit.toString(),
         });
-        
+
         if (filters.medicalRecordNumber) {
-          queryParams.append('medicalRecordNumber', filters.medicalRecordNumber);
+          queryParams.append(
+            "medicalRecordNumber",
+            filters.medicalRecordNumber,
+          );
         }
         if (filters.patientName) {
-          queryParams.append('patientName', filters.patientName);
+          queryParams.append("patientName", filters.patientName);
         }
         if (filters.gender) {
-          queryParams.append('gender', filters.gender);
+          queryParams.append("gender", filters.gender);
         }
         if (filters.birthDate) {
-          queryParams.append('birthDate', filters.birthDate);
+          queryParams.append("birthDate", filters.birthDate);
         }
 
         const refreshResponse = await fetch(`/api/patients?${queryParams}`, {
-          credentials: 'include' // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
         });
         if (!refreshResponse.ok) {
-          throw new Error('Failed to refresh patients');
+          throw new Error("Failed to refresh patients");
         }
         const result: PaginatedResult<Patient> = await refreshResponse.json();
-        
+
         setPatients(result.data);
         setPagination({
           page: result.page,
           totalPages: result.totalPages,
           total: result.total,
-          limit: result.limit
+          limit: result.limit,
         });
       } else {
         // Add new patient
-        response = await fetch('/api/patients', {
-          method: 'POST',
+        response = await fetch("/api/patients", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
-          credentials: 'include', // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
           body: JSON.stringify({
             medicalRecordNumber: data.medicalRecordNumber,
             patientName: data.patientName,
@@ -216,45 +232,48 @@ export default function PatientsPage() {
             birthDate: new Date(data.birthDate),
           }),
         });
-        
+
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to create patient');
+          throw new Error(errorData.error || "Failed to create patient");
         }
-        
+
         // Refresh the patient list after adding
         const queryParams = new URLSearchParams({
           page: pagination.page.toString(),
           limit: pagination.limit.toString(),
         });
-        
+
         if (filters.medicalRecordNumber) {
-          queryParams.append('medicalRecordNumber', filters.medicalRecordNumber);
+          queryParams.append(
+            "medicalRecordNumber",
+            filters.medicalRecordNumber,
+          );
         }
         if (filters.patientName) {
-          queryParams.append('patientName', filters.patientName);
+          queryParams.append("patientName", filters.patientName);
         }
         if (filters.gender) {
-          queryParams.append('gender', filters.gender);
+          queryParams.append("gender", filters.gender);
         }
         if (filters.birthDate) {
-          queryParams.append('birthDate', filters.birthDate);
+          queryParams.append("birthDate", filters.birthDate);
         }
 
         const refreshResponse = await fetch(`/api/patients?${queryParams}`, {
-          credentials: 'include' // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
         });
         if (!refreshResponse.ok) {
-          throw new Error('Failed to refresh patients');
+          throw new Error("Failed to refresh patients");
         }
         const result: PaginatedResult<Patient> = await refreshResponse.json();
-        
+
         setPatients(result.data);
         setPagination({
           page: result.page,
           totalPages: result.totalPages,
           total: result.total,
-          limit: result.limit
+          limit: result.limit,
         });
       }
 
@@ -287,47 +306,50 @@ export default function PatientsPage() {
     if (window.confirm("Are you sure you want to delete this patient?")) {
       try {
         const response = await fetch(`/api/patients/${id}`, {
-          method: 'DELETE',
-          credentials: 'include' // Include credentials (cookies) in the request
+          method: "DELETE",
+          credentials: "include", // Include credentials (cookies) in the request
         });
-        
+
         if (!response.ok) {
-          throw new Error('Failed to delete patient');
+          throw new Error("Failed to delete patient");
         }
-        
+
         // Refresh the patient list after deletion
         const queryParams = new URLSearchParams({
           page: pagination.page.toString(),
           limit: pagination.limit.toString(),
         });
-        
+
         if (filters.medicalRecordNumber) {
-          queryParams.append('medicalRecordNumber', filters.medicalRecordNumber);
+          queryParams.append(
+            "medicalRecordNumber",
+            filters.medicalRecordNumber,
+          );
         }
         if (filters.patientName) {
-          queryParams.append('patientName', filters.patientName);
+          queryParams.append("patientName", filters.patientName);
         }
         if (filters.gender) {
-          queryParams.append('gender', filters.gender);
+          queryParams.append("gender", filters.gender);
         }
         if (filters.birthDate) {
-          queryParams.append('birthDate', filters.birthDate);
+          queryParams.append("birthDate", filters.birthDate);
         }
 
         const refreshResponse = await fetch(`/api/patients?${queryParams}`, {
-          credentials: 'include' // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
         });
         if (!refreshResponse.ok) {
-          throw new Error('Failed to refresh patients');
+          throw new Error("Failed to refresh patients");
         }
         const result: PaginatedResult<Patient> = await refreshResponse.json();
-        
+
         setPatients(result.data);
         setPagination({
           page: result.page,
           totalPages: result.totalPages,
           total: result.total,
-          limit: result.limit
+          limit: result.limit,
         });
       } catch (error) {
         console.error("Error deleting patient:", error);
@@ -336,10 +358,13 @@ export default function PatientsPage() {
     }
   };
 
-  const handleFilterChange = (field: keyof typeof tempFilters, value: string) => {
-    setTempFilters(prev => ({
+  const handleFilterChange = (
+    field: keyof typeof tempFilters,
+    value: string,
+  ) => {
+    setTempFilters((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -347,41 +372,191 @@ export default function PatientsPage() {
     // Apply temporary filters to actual filters
     setFilters(tempFilters);
     // Reset to first page when filters change
-    setPagination(prev => ({
+    setPagination((prev) => ({
       ...prev,
-      page: 1
+      page: 1,
     }));
   };
 
   const handleClearFilters = () => {
     // Clear all filters
     setTempFilters({
-      medicalRecordNumber: '',
-      patientName: '',
-      gender: '',
-      birthDate: ''
+      medicalRecordNumber: "",
+      patientName: "",
+      gender: "",
+      birthDate: "",
     });
     setFilters({
-      medicalRecordNumber: '',
-      patientName: '',
-      gender: '',
-      birthDate: ''
+      medicalRecordNumber: "",
+      patientName: "",
+      gender: "",
+      birthDate: "",
     });
     // Reset to first page
-    setPagination(prev => ({
+    setPagination((prev) => ({
       ...prev,
-      page: 1
+      page: 1,
     }));
   };
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
-      setPagination(prev => ({
+      setPagination((prev) => ({
         ...prev,
-        page: newPage
+        page: newPage,
       }));
     }
   };
+
+  // Patient form component
+  const PatientForm = () => {
+    const onSubmitForm = handleSubmit(async (data) => {
+      setIsSubmitting(true);
+      try {
+        await onSubmit(data);
+      } finally {
+        setIsSubmitting(false);
+      }
+    });
+
+    return (
+      <form
+        id="patient-form"
+        onSubmit={onSubmitForm}
+        className="grid gap-4 py-4"
+      >
+        <div className="grid grid-cols-1 gap-4">
+          <div>
+            <Label htmlFor="medicalRecordNumber">Medical Record Number *</Label>
+            <Input
+              id="medicalRecordNumber"
+              {...register("medicalRecordNumber")}
+              className={`mt-1 ${errors.medicalRecordNumber ? "border-red-500" : ""}`}
+              disabled={isSubmitting}
+            />
+            {errors.medicalRecordNumber && (
+              <p className="mt-1 text-sm text-red-500">
+                {errors.medicalRecordNumber.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="patientName">Patient Name *</Label>
+            <Input
+              id="patientName"
+              {...register("patientName")}
+              className={`mt-1 ${errors.patientName ? "border-red-500" : ""}`}
+              disabled={isSubmitting}
+            />
+            {errors.patientName && (
+              <p className="mt-1 text-sm text-red-500">
+                {errors.patientName.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="gender">Gender *</Label>
+            <select
+              id="gender"
+              {...register("gender")}
+              className={`mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 ${errors.gender ? "border-red-500" : ""}`}
+              disabled={isSubmitting}
+            >
+              <option value="">Select Gender</option>
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
+            </select>
+            {errors.gender && (
+              <p className="mt-1 text-sm text-red-500">
+                {errors.gender.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="birthDate">Birth Date *</Label>
+            <Input
+              id="birthDate"
+              type="date"
+              {...register("birthDate")}
+              className={`mt-1 ${errors.birthDate ? "border-red-500" : ""}`}
+              disabled={isSubmitting}
+            />
+            {errors.birthDate && (
+              <p className="mt-1 text-sm text-red-500">
+                {errors.birthDate.message}
+              </p>
+            )}
+          </div>
+        </div>
+      </form>
+    );
+  };
+
+  // Function to export patients to Excel
+  const handleExportExcel = async () => {
+    try {
+      // Fetch patients with the same filters that are currently applied
+      const queryParams = new URLSearchParams({
+        limit: '10000', // Using a high limit to get all matching records
+      });
+      
+      // Add active filters to the query params
+      if (filters.medicalRecordNumber) {
+        queryParams.append('medicalRecordNumber', filters.medicalRecordNumber);
+      }
+      if (filters.patientName) {
+        queryParams.append('patientName', filters.patientName);
+      }
+      if (filters.gender) {
+        queryParams.append('gender', filters.gender);
+      }
+      if (filters.birthDate) {
+        queryParams.append('birthDate', filters.birthDate);
+      }
+
+      const response = await fetch(`/api/patients?${queryParams}`, {
+        credentials: 'include' // Include credentials (cookies) in the request
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch patients for export");
+      }
+
+      const allPatients = await response.json();
+
+      // Format data for Excel export
+      const formattedData = allPatients.data.map((patient: any) => ({
+        ID: patient.id,
+        "Medical Record Number": patient.medicalRecordNumber,
+        "Patient Name": patient.patientName,
+        Gender: patient.gender,
+        "Birth Date": new Date(patient.birthDate).toLocaleDateString(),
+        "Created At": new Date(patient.createdAt).toLocaleDateString(),
+        "Updated At": new Date(patient.updatedAt).toLocaleDateString(),
+      }));
+
+      // Create worksheet and workbook
+      const worksheet = XLSX.utils.json_to_sheet(formattedData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Patients");
+
+      // Generate and download Excel file with timestamp
+      XLSX.writeFile(
+        workbook,
+        `patients_export_${new Date().toISOString().split("T")[0]}_${Date.now()}.xlsx`,
+      );
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      alert("Failed to export patients to Excel. Please try again.");
+    }
+  };
+
+  // Memoize filtered patients to optimize rendering
+  const memoizedFilteredPatients = useMemo(() => {
+    return patients;
+  }, [patients]);
 
   if (loading) {
     return (
@@ -419,85 +594,33 @@ export default function PatientsPage() {
                 <DialogDescription>
                   {editingPatient
                     ? "Update patient information"
-                    : "Enter patient information to add a new patient"}
+                    : "Enter new patient details"}
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleSubmit(onSubmit)}>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="medicalRecordNumber" className="text-right">
-                      MR Number
-                    </Label>
-                    <Input
-                      id="medicalRecordNumber"
-                      className="col-span-3"
-                      {...register("medicalRecordNumber")}
-                    />
-                    {errors.medicalRecordNumber && (
-                      <p className="col-start-2 col-span-3 text-red-500 text-sm">
-                        {errors.medicalRecordNumber.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="patientName" className="text-right">
-                      Name
-                    </Label>
-                    <Input
-                      id="patientName"
-                      className="col-span-3"
-                      {...register("patientName")}
-                    />
-                    {errors.patientName && (
-                      <p className="col-start-2 col-span-3 text-red-500 text-sm">
-                        {errors.patientName.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="gender" className="text-right">
-                      Gender
-                    </Label>
-                    <select
-                      id="gender"
-                      className="col-span-3 border rounded-md px-3 py-2"
-                      {...register("gender")}
-                    >
-                      <option value="">Select Gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                    </select>
-                    {errors.gender && (
-                      <p className="col-start-2 col-span-3 text-red-500 text-sm">
-                        {errors.gender.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="birthDate" className="text-right">
-                      Birth Date
-                    </Label>
-                    <Input
-                      id="birthDate"
-                      type="date"
-                      className="col-span-3"
-                      {...register("birthDate")}
-                    />
-                    {errors.birthDate && (
-                      <p className="col-start-2 col-span-3 text-red-500 text-sm">
-                        {errors.birthDate.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit">
-                    {editingPatient ? "Update Patient" : "Add Patient"}
-                  </Button>
-                </DialogFooter>
-              </form>
+              <PatientForm />
+              <DialogFooter>
+                <Button
+                  type="submit"
+                  form="patient-form"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting
+                    ? "Saving..."
+                    : editingPatient
+                      ? "Update"
+                      : "Create"}
+                </Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
+          <Button
+            onClick={handleExportExcel}
+            className="w-full sm:w-auto"
+            disabled={isSubmitting} // Disable export during form submission
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export to Excel
+          </Button>
         </div>
       </div>
 
@@ -511,13 +634,15 @@ export default function PatientsPage() {
                 id="filter-medical-record"
                 placeholder="Filter by MR Number"
                 value={tempFilters.medicalRecordNumber}
-                onChange={(e) => handleFilterChange('medicalRecordNumber', e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange("medicalRecordNumber", e.target.value)
+                }
                 className="pl-10 w-full"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
             </div>
           </div>
-          
+
           <div>
             <Label htmlFor="filter-patient-name">Patient Name</Label>
             <div className="relative mt-1">
@@ -525,19 +650,21 @@ export default function PatientsPage() {
                 id="filter-patient-name"
                 placeholder="Filter by Name"
                 value={tempFilters.patientName}
-                onChange={(e) => handleFilterChange('patientName', e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange("patientName", e.target.value)
+                }
                 className="pl-10 w-full"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
             </div>
           </div>
-          
+
           <div>
             <Label htmlFor="filter-gender">Gender</Label>
             <select
               id="filter-gender"
               value={tempFilters.gender}
-              onChange={(e) => handleFilterChange('gender', e.target.value)}
+              onChange={(e) => handleFilterChange("gender", e.target.value)}
               className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
             >
               <option value="">All Genders</option>
@@ -545,34 +672,30 @@ export default function PatientsPage() {
               <option value="Female">Female</option>
             </select>
           </div>
-          
+
           <div>
             <Label htmlFor="filter-birth-date">Birth Date</Label>
             <Input
               id="filter-birth-date"
               type="date"
               value={tempFilters.birthDate}
-              onChange={(e) => handleFilterChange('birthDate', e.target.value)}
+              onChange={(e) => handleFilterChange("birthDate", e.target.value)}
               className="w-full"
             />
           </div>
         </div>
-        
+
         {/* Filter Buttons */}
         <div className="flex gap-2 mt-4">
-          <Button 
-            type="button" 
+          <Button
+            type="button"
             onClick={handleApplyFilters}
             className="bg-blue-600 hover:bg-blue-700"
           >
             <Search className="h-4 w-4 mr-2" />
             Filter
           </Button>
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={handleClearFilters}
-          >
+          <Button type="button" variant="outline" onClick={handleClearFilters}>
             Clear Filters
           </Button>
         </div>
@@ -638,13 +761,17 @@ export default function PatientsPage() {
       {pagination.totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
           <div className="text-sm text-gray-700">
-            Showing <span className="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> to{' '}
+            Showing{" "}
+            <span className="font-medium">
+              {(pagination.page - 1) * pagination.limit + 1}
+            </span>{" "}
+            to{" "}
             <span className="font-medium">
               {Math.min(pagination.page * pagination.limit, pagination.total)}
-            </span>{' '}
+            </span>{" "}
             of <span className="font-medium">{pagination.total}</span> results
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
@@ -654,11 +781,11 @@ export default function PatientsPage() {
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            
+
             <div className="flex items-center gap-1">
               {[...Array(Math.min(5, pagination.totalPages))].map((_, i) => {
                 let pageNum;
-                
+
                 if (pagination.totalPages <= 5) {
                   // Show all pages if total pages is 5 or less
                   pageNum = i + 1;
@@ -672,21 +799,27 @@ export default function PatientsPage() {
                   // Show 2 pages before and after current page
                   pageNum = pagination.page - 2 + i;
                 }
-                
+
                 return (
                   <Button
                     key={pageNum}
-                    variant={pagination.page === pageNum ? "default" : "outline"}
+                    variant={
+                      pagination.page === pageNum ? "default" : "outline"
+                    }
                     size="sm"
                     onClick={() => handlePageChange(pageNum)}
-                    className={pagination.page === pageNum ? "bg-blue-600 hover:bg-blue-700" : ""}
+                    className={
+                      pagination.page === pageNum
+                        ? "bg-blue-600 hover:bg-blue-700"
+                        : ""
+                    }
                   >
                     {pageNum}
                   </Button>
                 );
               })}
             </div>
-            
+
             <Button
               variant="outline"
               size="sm"

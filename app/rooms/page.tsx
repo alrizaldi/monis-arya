@@ -1,36 +1,45 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+} from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import * as XLSX from "xlsx";
 
 // Define schema for room form validation
 const roomSchema = z.object({
-  roomNumber: z.string().min(1, 'Room Number is required'),
-  bedNumber: z.number().min(1, 'Bed Number is required'),
-  roomClass: z.string().min(1, 'Room Class is required'),
+  roomNumber: z.string().min(1, "Room Number is required"),
+  bedNumber: z.number().min(1, "Bed Number is required"),
+  roomClass: z.string().min(1, "Room Class is required"),
 });
 
 type RoomFormValues = z.infer<typeof roomSchema>;
@@ -62,24 +71,30 @@ export default function RoomsPage() {
     page: 1,
     totalPages: 1,
     total: 0,
-    limit: 10
+    limit: 10,
   });
-  
+
   // Filter states
   const [filters, setFilters] = useState({
-    roomNumber: '',
-    roomClass: '',
-    bedNumber: ''
+    roomNumber: "",
+    roomClass: "",
+    bedNumber: "",
   });
-  
+
   // Temporary filter values for input fields
   const [tempFilters, setTempFilters] = useState({
-    roomNumber: '',
-    roomClass: '',
-    bedNumber: ''
+    roomNumber: "",
+    roomClass: "",
+    bedNumber: "",
   });
-  
-  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<RoomFormValues>({
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<RoomFormValues>({
     resolver: zodResolver(roomSchema),
   });
 
@@ -92,31 +107,31 @@ export default function RoomsPage() {
           page: pagination.page.toString(),
           limit: pagination.limit.toString(),
         });
-        
+
         if (filters.roomNumber) {
-          queryParams.append('roomNumber', filters.roomNumber);
+          queryParams.append("roomNumber", filters.roomNumber);
         }
         if (filters.roomClass) {
-          queryParams.append('roomClass', filters.roomClass);
+          queryParams.append("roomClass", filters.roomClass);
         }
         if (filters.bedNumber) {
-          queryParams.append('bedNumber', filters.bedNumber);
+          queryParams.append("bedNumber", filters.bedNumber);
         }
 
         const response = await fetch(`/api/rooms?${queryParams}`, {
-          credentials: 'include' // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
         });
         if (!response.ok) {
-          throw new Error('Failed to fetch rooms');
+          throw new Error("Failed to fetch rooms");
         }
         const result: PaginatedResult<Room> = await response.json();
-        
+
         setRooms(result.data);
         setPagination({
           page: result.page,
           totalPages: result.totalPages,
           total: result.total,
-          limit: result.limit
+          limit: result.limit,
         });
       } catch (error) {
         console.error("Error loading rooms:", error);
@@ -132,108 +147,108 @@ export default function RoomsPage() {
     try {
       console.log("Saving room:", data);
       let response;
-      
+
       if (editingRoom) {
         // Update existing room
         response = await fetch(`/api/rooms/${editingRoom.id}`, {
-          method: 'PUT',
+          method: "PUT",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
-          credentials: 'include', // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
           body: JSON.stringify({
             roomNumber: data.roomNumber,
             bedNumber: data.bedNumber,
-            roomClass: data.roomClass
+            roomClass: data.roomClass,
           }),
         });
-        
+
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to update room');
+          throw new Error(errorData.error || "Failed to update room");
         }
-        
+
         // Refresh the room list after update
         const queryParams = new URLSearchParams({
           page: pagination.page.toString(),
           limit: pagination.limit.toString(),
         });
-        
+
         if (filters.roomNumber) {
-          queryParams.append('roomNumber', filters.roomNumber);
+          queryParams.append("roomNumber", filters.roomNumber);
         }
         if (filters.roomClass) {
-          queryParams.append('roomClass', filters.roomClass);
+          queryParams.append("roomClass", filters.roomClass);
         }
         if (filters.bedNumber) {
-          queryParams.append('bedNumber', filters.bedNumber);
+          queryParams.append("bedNumber", filters.bedNumber);
         }
 
         const refreshResponse = await fetch(`/api/rooms?${queryParams}`, {
-          credentials: 'include' // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
         });
         if (!refreshResponse.ok) {
-          throw new Error('Failed to refresh rooms');
+          throw new Error("Failed to refresh rooms");
         }
         const result: PaginatedResult<Room> = await refreshResponse.json();
-        
+
         setRooms(result.data);
         setPagination({
           page: result.page,
           totalPages: result.totalPages,
           total: result.total,
-          limit: result.limit
+          limit: result.limit,
         });
       } else {
         // Add new room
-        response = await fetch('/api/rooms', {
-          method: 'POST',
+        response = await fetch("/api/rooms", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
-          credentials: 'include', // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
           body: JSON.stringify({
             roomNumber: data.roomNumber,
             bedNumber: data.bedNumber,
-            roomClass: data.roomClass
+            roomClass: data.roomClass,
           }),
         });
-        
+
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to create room');
+          throw new Error(errorData.error || "Failed to create room");
         }
-        
+
         // Refresh the room list after adding
         const queryParams = new URLSearchParams({
           page: pagination.page.toString(),
           limit: pagination.limit.toString(),
         });
-        
+
         if (filters.roomNumber) {
-          queryParams.append('roomNumber', filters.roomNumber);
+          queryParams.append("roomNumber", filters.roomNumber);
         }
         if (filters.roomClass) {
-          queryParams.append('roomClass', filters.roomClass);
+          queryParams.append("roomClass", filters.roomClass);
         }
         if (filters.bedNumber) {
-          queryParams.append('bedNumber', filters.bedNumber);
+          queryParams.append("bedNumber", filters.bedNumber);
         }
 
         const refreshResponse = await fetch(`/api/rooms?${queryParams}`, {
-          credentials: 'include' // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
         });
         if (!refreshResponse.ok) {
-          throw new Error('Failed to refresh rooms');
+          throw new Error("Failed to refresh rooms");
         }
         const result: PaginatedResult<Room> = await refreshResponse.json();
-        
+
         setRooms(result.data);
         setPagination({
           page: result.page,
           totalPages: result.totalPages,
           total: result.total,
-          limit: result.limit
+          limit: result.limit,
         });
       }
 
@@ -252,9 +267,9 @@ export default function RoomsPage() {
 
   const handleEdit = (room: Room) => {
     setEditingRoom(room);
-    setValue('roomNumber', room.roomNumber);
-    setValue('bedNumber', room.bedNumber);
-    setValue('roomClass', room.roomClass);
+    setValue("roomNumber", room.roomNumber);
+    setValue("bedNumber", room.bedNumber);
+    setValue("roomClass", room.roomClass);
     setIsDialogOpen(true);
   };
 
@@ -262,44 +277,44 @@ export default function RoomsPage() {
     if (window.confirm("Are you sure you want to delete this room?")) {
       try {
         const response = await fetch(`/api/rooms/${id}`, {
-          method: 'DELETE',
-          credentials: 'include' // Include credentials (cookies) in the request
+          method: "DELETE",
+          credentials: "include", // Include credentials (cookies) in the request
         });
-        
+
         if (!response.ok) {
-          throw new Error('Failed to delete room');
+          throw new Error("Failed to delete room");
         }
-        
+
         // Refresh the room list after deletion
         const queryParams = new URLSearchParams({
           page: pagination.page.toString(),
           limit: pagination.limit.toString(),
         });
-        
+
         if (filters.roomNumber) {
-          queryParams.append('roomNumber', filters.roomNumber);
+          queryParams.append("roomNumber", filters.roomNumber);
         }
         if (filters.roomClass) {
-          queryParams.append('roomClass', filters.roomClass);
+          queryParams.append("roomClass", filters.roomClass);
         }
         if (filters.bedNumber) {
-          queryParams.append('bedNumber', filters.bedNumber);
+          queryParams.append("bedNumber", filters.bedNumber);
         }
 
         const refreshResponse = await fetch(`/api/rooms?${queryParams}`, {
-          credentials: 'include' // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
         });
         if (!refreshResponse.ok) {
-          throw new Error('Failed to refresh rooms');
+          throw new Error("Failed to refresh rooms");
         }
         const result: PaginatedResult<Room> = await refreshResponse.json();
-        
+
         setRooms(result.data);
         setPagination({
           page: result.page,
           totalPages: result.totalPages,
           total: result.total,
-          limit: result.limit
+          limit: result.limit,
         });
       } catch (error) {
         console.error("Error deleting room:", error);
@@ -308,10 +323,13 @@ export default function RoomsPage() {
     }
   };
 
-  const handleFilterChange = (field: keyof typeof tempFilters, value: string) => {
-    setTempFilters(prev => ({
+  const handleFilterChange = (
+    field: keyof typeof tempFilters,
+    value: string,
+  ) => {
+    setTempFilters((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -319,37 +337,91 @@ export default function RoomsPage() {
     // Apply temporary filters to actual filters
     setFilters(tempFilters);
     // Reset to first page when filters change
-    setPagination(prev => ({
+    setPagination((prev) => ({
       ...prev,
-      page: 1
+      page: 1,
     }));
   };
 
   const handleClearFilters = () => {
     // Clear all filters
     setTempFilters({
-      roomNumber: '',
-      roomClass: '',
-      bedNumber: ''
+      roomNumber: "",
+      roomClass: "",
+      bedNumber: "",
     });
     setFilters({
-      roomNumber: '',
-      roomClass: '',
-      bedNumber: ''
+      roomNumber: "",
+      roomClass: "",
+      bedNumber: "",
     });
     // Reset to first page
-    setPagination(prev => ({
+    setPagination((prev) => ({
       ...prev,
-      page: 1
+      page: 1,
     }));
   };
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
-      setPagination(prev => ({
+      setPagination((prev) => ({
         ...prev,
-        page: newPage
+        page: newPage,
       }));
+    }
+  };
+
+  // Function to export rooms to Excel
+  const handleExportExcel = async () => {
+    try {
+      // Fetch rooms with the same filters that are currently applied
+      const queryParams = new URLSearchParams({
+        limit: '10000', // Using a high limit to get all matching records
+      });
+      
+      // Add active filters to the query params
+      if (filters.roomNumber) {
+        queryParams.append('roomNumber', filters.roomNumber);
+      }
+      if (filters.roomClass) {
+        queryParams.append('roomClass', filters.roomClass);
+      }
+      if (filters.bedNumber) {
+        queryParams.append('bedNumber', filters.bedNumber);
+      }
+
+      const response = await fetch(`/api/rooms?${queryParams}`, {
+        credentials: 'include' // Include credentials (cookies) in the request
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch rooms for export");
+      }
+
+      const allRooms = await response.json();
+
+      // Format data for Excel export
+      const formattedData = allRooms.data.map((room: any) => ({
+        'ID': room.id,
+        'Room Number': room.roomNumber,
+        'Bed Number': room.bedNumber,
+        'Room Class': room.roomClass,
+        'Created At': new Date(room.createdAt).toLocaleDateString(),
+        'Updated At': new Date(room.updatedAt).toLocaleDateString(),
+      }));
+
+      // Create worksheet and workbook
+      const worksheet = XLSX.utils.json_to_sheet(formattedData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Rooms");
+
+      // Generate and download Excel file with timestamp
+      XLSX.writeFile(
+        workbook,
+        `rooms_export_${new Date().toISOString().split("T")[0]}_${Date.now()}.xlsx`,
+      );
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      alert("Failed to export rooms to Excel. Please try again.");
     }
   };
 
@@ -370,7 +442,7 @@ export default function RoomsPage() {
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button 
+              <Button
                 onClick={() => {
                   setEditingRoom(null);
                   reset();
@@ -383,11 +455,13 @@ export default function RoomsPage() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>{editingRoom ? 'Edit Room' : 'Add New Room'}</DialogTitle>
+                <DialogTitle>
+                  {editingRoom ? "Edit Room" : "Add New Room"}
+                </DialogTitle>
                 <DialogDescription>
-                  {editingRoom 
-                    ? 'Update room information' 
-                    : 'Enter room information to add a new room'}
+                  {editingRoom
+                    ? "Update room information"
+                    : "Enter room information to add a new room"}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit(onSubmit)}>
@@ -399,7 +473,7 @@ export default function RoomsPage() {
                     <Input
                       id="roomNumber"
                       className="col-span-3"
-                      {...register('roomNumber')}
+                      {...register("roomNumber")}
                     />
                     {errors.roomNumber && (
                       <p className="col-start-2 col-span-3 text-red-500 text-sm">
@@ -415,7 +489,7 @@ export default function RoomsPage() {
                       id="bedNumber"
                       type="number"
                       className="col-span-3"
-                      {...register('bedNumber', { valueAsNumber: true })}
+                      {...register("bedNumber", { valueAsNumber: true })}
                     />
                     {errors.bedNumber && (
                       <p className="col-start-2 col-span-3 text-red-500 text-sm">
@@ -430,7 +504,7 @@ export default function RoomsPage() {
                     <select
                       id="roomClass"
                       className="col-span-3 border rounded-md px-3 py-2"
-                      {...register('roomClass')}
+                      {...register("roomClass")}
                     >
                       <option value="">Select Room Class</option>
                       <option value="Regular">Regular</option>
@@ -447,12 +521,16 @@ export default function RoomsPage() {
                 </div>
                 <DialogFooter>
                   <Button type="submit">
-                    {editingRoom ? 'Update Room' : 'Add Room'}
+                    {editingRoom ? "Update Room" : "Add Room"}
                   </Button>
                 </DialogFooter>
               </form>
             </DialogContent>
           </Dialog>
+          <Button onClick={handleExportExcel} className="w-full sm:w-auto">
+            <Download className="h-4 w-4 mr-2" />
+            Export to Excel
+          </Button>
         </div>
       </div>
 
@@ -466,19 +544,21 @@ export default function RoomsPage() {
                 id="filter-room-number"
                 placeholder="Filter by Room Number"
                 value={tempFilters.roomNumber}
-                onChange={(e) => handleFilterChange('roomNumber', e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange("roomNumber", e.target.value)
+                }
                 className="pl-10 w-full"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
             </div>
           </div>
-          
+
           <div>
             <Label htmlFor="filter-room-class">Room Class</Label>
             <select
               id="filter-room-class"
               value={tempFilters.roomClass}
-              onChange={(e) => handleFilterChange('roomClass', e.target.value)}
+              onChange={(e) => handleFilterChange("roomClass", e.target.value)}
               className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
             >
               <option value="">All Classes</option>
@@ -488,7 +568,7 @@ export default function RoomsPage() {
               <option value="Emergency">Emergency</option>
             </select>
           </div>
-          
+
           <div>
             <Label htmlFor="filter-bed-number">Bed Number</Label>
             <Input
@@ -496,27 +576,23 @@ export default function RoomsPage() {
               type="number"
               placeholder="Filter by Bed Number"
               value={tempFilters.bedNumber}
-              onChange={(e) => handleFilterChange('bedNumber', e.target.value)}
+              onChange={(e) => handleFilterChange("bedNumber", e.target.value)}
               className="w-full"
             />
           </div>
         </div>
-        
+
         {/* Filter Buttons */}
         <div className="flex gap-2 mt-4">
-          <Button 
-            type="button" 
+          <Button
+            type="button"
             onClick={handleApplyFilters}
             className="bg-blue-600 hover:bg-blue-700"
           >
             <Search className="h-4 w-4 mr-2" />
             Filter
           </Button>
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={handleClearFilters}
-          >
+          <Button type="button" variant="outline" onClick={handleClearFilters}>
             Clear Filters
           </Button>
         </div>
@@ -540,15 +616,15 @@ export default function RoomsPage() {
                 <TableCell>{room.roomClass}</TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => handleEdit(room)}
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => handleDelete(room.id)}
                     >
@@ -576,13 +652,17 @@ export default function RoomsPage() {
       {pagination.totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
           <div className="text-sm text-gray-700">
-            Showing <span className="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> to{' '}
+            Showing{" "}
+            <span className="font-medium">
+              {(pagination.page - 1) * pagination.limit + 1}
+            </span>{" "}
+            to{" "}
             <span className="font-medium">
               {Math.min(pagination.page * pagination.limit, pagination.total)}
-            </span>{' '}
+            </span>{" "}
             of <span className="font-medium">{pagination.total}</span> results
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
@@ -592,11 +672,11 @@ export default function RoomsPage() {
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            
+
             <div className="flex items-center gap-1">
               {[...Array(Math.min(5, pagination.totalPages))].map((_, i) => {
                 let pageNum;
-                
+
                 if (pagination.totalPages <= 5) {
                   // Show all pages if total pages is 5 or less
                   pageNum = i + 1;
@@ -610,21 +690,27 @@ export default function RoomsPage() {
                   // Show 2 pages before and after current page
                   pageNum = pagination.page - 2 + i;
                 }
-                
+
                 return (
                   <Button
                     key={pageNum}
-                    variant={pagination.page === pageNum ? "default" : "outline"}
+                    variant={
+                      pagination.page === pageNum ? "default" : "outline"
+                    }
                     size="sm"
                     onClick={() => handlePageChange(pageNum)}
-                    className={pagination.page === pageNum ? "bg-blue-600 hover:bg-blue-700" : ""}
+                    className={
+                      pagination.page === pageNum
+                        ? "bg-blue-600 hover:bg-blue-700"
+                        : ""
+                    }
                   >
                     {pageNum}
                   </Button>
                 );
               })}
             </div>
-            
+
             <Button
               variant="outline"
               size="sm"

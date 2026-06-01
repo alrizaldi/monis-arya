@@ -1,26 +1,26 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Plus,
   Eye,
@@ -31,8 +31,10 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
+  Download,
 } from "lucide-react";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
+import * as XLSX from "xlsx";
 
 // Types for the dropdown data
 type Patient = {
@@ -99,7 +101,7 @@ type Submission = {
       isActive: boolean;
       createdAt: Date;
       updatedAt: Date;
-    }>
+    }>;
   }>;
 };
 
@@ -120,15 +122,17 @@ const SearchableSelect = ({
   id: string;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Filter options based on search term
-  const filteredOptions = options.filter(option =>
-    option.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (option.additionalInfo && option.additionalInfo.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredOptions = options.filter(
+    (option) =>
+      option.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (option.additionalInfo &&
+        option.additionalInfo.toLowerCase().includes(searchTerm.toLowerCase())),
   );
 
-  const selectedOption = options.find(option => option.id === value);
+  const selectedOption = options.find((option) => option.id === value);
 
   return (
     <div className="relative">
@@ -139,12 +143,14 @@ const SearchableSelect = ({
           className="w-full border rounded-md px-3 py-2 text-left flex justify-between items-center border-gray-300"
           onClick={() => setIsOpen(!isOpen)}
         >
-          <span className={selectedOption ? 'text-gray-900' : 'text-gray-500'}>
-            {selectedOption ? `${selectedOption.name}${selectedOption.additionalInfo ? ` (${selectedOption.additionalInfo})` : ''}` : placeholder}
+          <span className={selectedOption ? "text-gray-900" : "text-gray-500"}>
+            {selectedOption
+              ? `${selectedOption.name}${selectedOption.additionalInfo ? ` (${selectedOption.additionalInfo})` : ""}`
+              : placeholder}
           </span>
-          <span>{isOpen ? '▲' : '▼'}</span>
+          <span>{isOpen ? "▲" : "▼"}</span>
         </button>
-        
+
         {isOpen && (
           <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
             <div className="p-2 border-b">
@@ -163,17 +169,19 @@ const SearchableSelect = ({
                   <div
                     key={option.id}
                     className={`px-3 py-2 cursor-pointer hover:bg-gray-100 ${
-                      value === option.id ? 'bg-blue-100' : ''
+                      value === option.id ? "bg-blue-100" : ""
                     }`}
                     onClick={() => {
                       onChange(option.id);
                       setIsOpen(false);
-                      setSearchTerm('');
+                      setSearchTerm("");
                     }}
                   >
                     <div className="font-medium">{option.name}</div>
                     {option.additionalInfo && (
-                      <div className="text-sm text-gray-500">{option.additionalInfo}</div>
+                      <div className="text-sm text-gray-500">
+                        {option.additionalInfo}
+                      </div>
                     )}
                   </div>
                 ))
@@ -192,39 +200,41 @@ export default function SubmissionsPage() {
   const router = useRouter();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingSubmission, setEditingSubmission] = useState<Submission | null>(null);
+  const [editingSubmission, setEditingSubmission] = useState<Submission | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
     page: 1,
     totalPages: 1,
     total: 0,
-    limit: 10
+    limit: 10,
   });
-  
+
   // Dropdown data
   const [patients, setPatients] = useState<Patient[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [payers, setPayers] = useState<Payer[]>([]);
-  
+
   // Form values
-  const [selectedPatientId, setSelectedPatientId] = useState('');
-  const [selectedRoomId, setSelectedRoomId] = useState('');
-  const [selectedPayerId, setSelectedPayerId] = useState('');
-  
+  const [selectedPatientId, setSelectedPatientId] = useState("");
+  const [selectedRoomId, setSelectedRoomId] = useState("");
+  const [selectedPayerId, setSelectedPayerId] = useState("");
+
   // Filter states
   const [filters, setFilters] = useState({
-    submissionNumber: '',
-    patientName: '',
-    payerName: '',
-    status: ''
+    submissionNumber: "",
+    patientName: "",
+    payerName: "",
+    status: "",
   });
-  
+
   // Temporary filter values for input fields
   const [tempFilters, setTempFilters] = useState({
-    submissionNumber: '',
-    patientName: '',
-    payerName: '',
-    status: ''
+    submissionNumber: "",
+    patientName: "",
+    payerName: "",
+    status: "",
   });
 
   // Load submissions from API with pagination and filters
@@ -236,28 +246,28 @@ export default function SubmissionsPage() {
           page: pagination.page.toString(),
           limit: pagination.limit.toString(),
         });
-        
+
         // Only append filters if they have values
         Object.entries(filters).forEach(([key, value]) => {
-          if (value && value.trim() !== '') {
+          if (value && value.trim() !== "") {
             queryParams.append(key, value);
           }
         });
 
         const response = await fetch(`/api/submissions?${queryParams}`, {
-          credentials: 'include' // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
         });
         if (!response.ok) {
-          throw new Error('Failed to fetch submissions');
+          throw new Error("Failed to fetch submissions");
         }
         const result = await response.json();
-        
+
         setSubmissions(result.data);
         setPagination({
           page: result.page,
           totalPages: result.totalPages,
           total: result.total,
-          limit: result.limit
+          limit: result.limit,
         });
       } catch (error) {
         console.error("Error loading submissions:", error);
@@ -274,30 +284,40 @@ export default function SubmissionsPage() {
     const loadDropdownData = async () => {
       try {
         // Load patients
-        const patientsResponse = await fetch('/api/patients', {
-          credentials: 'include' // Include credentials (cookies) in the request
+        const patientsResponse = await fetch("/api/patients", {
+          credentials: "include", // Include credentials (cookies) in the request
         });
         if (patientsResponse.ok) {
           const patientsResult = await patientsResponse.json();
-          setPatients(Array.isArray(patientsResult) ? patientsResult : patientsResult.data || []);
+          setPatients(
+            Array.isArray(patientsResult)
+              ? patientsResult
+              : patientsResult.data || [],
+          );
         }
-        
+
         // Load rooms
-        const roomsResponse = await fetch('/api/rooms', {
-          credentials: 'include' // Include credentials (cookies) in the request
+        const roomsResponse = await fetch("/api/rooms", {
+          credentials: "include", // Include credentials (cookies) in the request
         });
         if (roomsResponse.ok) {
           const roomsResult = await roomsResponse.json();
-          setRooms(Array.isArray(roomsResult) ? roomsResult : roomsResult.data || []);
+          setRooms(
+            Array.isArray(roomsResult) ? roomsResult : roomsResult.data || [],
+          );
         }
-        
+
         // Load payers
-        const payersResponse = await fetch('/api/payers', {
-          credentials: 'include' // Include credentials (cookies) in the request
+        const payersResponse = await fetch("/api/payers", {
+          credentials: "include", // Include credentials (cookies) in the request
         });
         if (payersResponse.ok) {
           const payersResult = await payersResponse.json();
-          setPayers(Array.isArray(payersResult) ? payersResult : payersResult.data || []);
+          setPayers(
+            Array.isArray(payersResult)
+              ? payersResult
+              : payersResult.data || [],
+          );
         }
       } catch (error) {
         console.error("Error loading dropdown data:", error);
@@ -309,128 +329,132 @@ export default function SubmissionsPage() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate required fields
     if (!selectedPatientId || !selectedRoomId || !selectedPayerId) {
-      alert('Please fill in all required fields');
+      alert("Please fill in all required fields");
       return;
     }
-    
+
     try {
-      console.log("Saving submission:", { selectedPatientId, selectedRoomId, selectedPayerId });
+      console.log("Saving submission:", {
+        selectedPatientId,
+        selectedRoomId,
+        selectedPayerId,
+      });
       let response;
-      
+
       if (editingSubmission) {
         // Update existing submission
         response = await fetch(`/api/submissions/${editingSubmission.id}`, {
-          method: 'PUT',
+          method: "PUT",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
-          credentials: 'include', // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
           body: JSON.stringify({
             patientId: selectedPatientId,
             roomId: selectedRoomId,
-            payerId: selectedPayerId
+            payerId: selectedPayerId,
           }),
         });
-        
+
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to update submission');
+          throw new Error(errorData.error || "Failed to update submission");
         }
-        
+
         // Refresh the submission list after update
         const queryParams = new URLSearchParams({
           page: pagination.page.toString(),
           limit: pagination.limit.toString(),
         });
-        
+
         // Only append filters if they have values
         Object.entries(filters).forEach(([key, value]) => {
-          if (value && value.trim() !== '') {
+          if (value && value.trim() !== "") {
             queryParams.append(key, value);
           }
         });
 
         const refreshResponse = await fetch(`/api/submissions?${queryParams}`, {
-          credentials: 'include' // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
         });
         if (!refreshResponse.ok) {
-          throw new Error('Failed to refresh submissions');
+          throw new Error("Failed to refresh submissions");
         }
         const result = await refreshResponse.json();
-        
+
         setSubmissions(result.data);
         setPagination({
           page: result.page,
           totalPages: result.totalPages,
           total: result.total,
-          limit: result.limit
+          limit: result.limit,
         });
       } else {
         // Add new submission
-        response = await fetch('/api/submissions', {
-          method: 'POST',
+        response = await fetch("/api/submissions", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
-          credentials: 'include', // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
           body: JSON.stringify({
             submissionNumber: `SUB-${Date.now()}`, // Generate a unique number for demo
             patientId: selectedPatientId,
             roomId: selectedRoomId,
-            payerId: selectedPayerId
+            payerId: selectedPayerId,
           }),
         });
-        
+
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to create submission');
+          throw new Error(errorData.error || "Failed to create submission");
         }
-        
+
         // Refresh the submission list after adding
         const queryParams = new URLSearchParams({
           page: pagination.page.toString(),
           limit: pagination.limit.toString(),
         });
-        
+
         if (filters.submissionNumber) {
-          queryParams.append('submissionNumber', filters.submissionNumber);
+          queryParams.append("submissionNumber", filters.submissionNumber);
         }
         if (filters.patientName) {
-          queryParams.append('patientName', filters.patientName);
+          queryParams.append("patientName", filters.patientName);
         }
         if (filters.payerName) {
-          queryParams.append('payerName', filters.payerName);
+          queryParams.append("payerName", filters.payerName);
         }
         if (filters.status) {
-          queryParams.append('status', filters.status);
+          queryParams.append("status", filters.status);
         }
 
         const refreshResponse = await fetch(`/api/submissions?${queryParams}`, {
-          credentials: 'include' // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
         });
         if (!refreshResponse.ok) {
-          throw new Error('Failed to refresh submissions');
+          throw new Error("Failed to refresh submissions");
         }
         const result = await refreshResponse.json();
-        
+
         setSubmissions(result.data);
         setPagination({
           page: result.page,
           totalPages: result.totalPages,
           total: result.total,
-          limit: result.limit
+          limit: result.limit,
         });
       }
 
       setIsDialogOpen(false);
       setEditingSubmission(null);
       // Reset selection values
-      setSelectedPatientId('');
-      setSelectedRoomId('');
-      setSelectedPayerId('');
+      setSelectedPatientId("");
+      setSelectedRoomId("");
+      setSelectedPayerId("");
     } catch (error) {
       console.error("Error saving submission:", error);
       alert(
@@ -448,13 +472,16 @@ export default function SubmissionsPage() {
 
   const handleExportPdf = (submissionId: string) => {
     // Open a new window/tab with the PDF report page URL (not the API endpoint)
-    window.open(`/pdf/report/${submissionId}`, '_blank');
+    window.open(`/pdf/report/${submissionId}`, "_blank");
   };
 
-  const handleFilterChange = (field: keyof typeof tempFilters, value: string) => {
-    setTempFilters(prev => ({
+  const handleFilterChange = (
+    field: keyof typeof tempFilters,
+    value: string,
+  ) => {
+    setTempFilters((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -462,39 +489,228 @@ export default function SubmissionsPage() {
     // Apply temporary filters to actual filters
     setFilters(tempFilters);
     // Reset to first page when filters change
-    setPagination(prev => ({
+    setPagination((prev) => ({
       ...prev,
-      page: 1
+      page: 1,
     }));
   };
 
   const handleClearFilters = () => {
     // Clear all filters
     setTempFilters({
-      submissionNumber: '',
-      patientName: '',
-      payerName: '',
-      status: ''
+      submissionNumber: "",
+      patientName: "",
+      payerName: "",
+      status: "",
     });
     setFilters({
-      submissionNumber: '',
-      patientName: '',
-      payerName: '',
-      status: ''
+      submissionNumber: "",
+      patientName: "",
+      payerName: "",
+      status: "",
     });
     // Reset to first page
-    setPagination(prev => ({
+    setPagination((prev) => ({
       ...prev,
-      page: 1
+      page: 1,
     }));
   };
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
-      setPagination(prev => ({
+      setPagination((prev) => ({
         ...prev,
-        page: newPage
+        page: newPage,
       }));
+    }
+  };
+
+  // Function to export submissions to Excel with all related data
+  const handleExportExcel = async () => {
+    try {
+      // Fetch submissions with the same filters that are currently applied
+      const queryParams = new URLSearchParams({
+        limit: "10000", // Using a high limit to get all matching records
+      });
+
+      // Add active filters to the query params
+      if (filters.submissionNumber) {
+        queryParams.append("submissionNumber", filters.submissionNumber);
+      }
+      if (filters.patientName) {
+        queryParams.append("patientName", filters.patientName);
+      }
+      if (filters.payerName) {
+        queryParams.append("payerName", filters.payerName);
+      }
+      if (filters.status) {
+        queryParams.append("status", filters.status);
+      }
+
+      const response = await fetch(`/api/submissions?${queryParams}`, {
+        credentials: "include", // Include credentials (cookies) in the request
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch submissions for export");
+      }
+
+      const allSubmissions = await response.json();
+
+      // Flatten submissions with related data for Excel export
+      const flattenedData: any = [];
+
+      allSubmissions.data.forEach((submission: any) => {
+        // For each submission, we'll create rows for each detail and pending record
+        if (submission.details && submission.details.length > 0) {
+          submission.details.forEach((detail: any) => {
+            if (detail.pendingHistories && detail.pendingHistories.length > 0) {
+              // If there are pending records, create a row for each pending record
+              detail.pendingHistories.forEach((pending: any) => {
+                flattenedData.push({
+                  "Submission ID": submission.id,
+                  "Submission Number": submission.submissionNumber,
+                  "Patient ID": submission.patient?.id || "",
+                  "Patient Name": submission.patient?.patientName || "",
+                  "Patient MRN": submission.patient?.medicalRecordNumber || "",
+                  "Patient Gender": submission.patient?.gender || "",
+                  "Patient Birth Date": submission.patient?.birthDate
+                    ? new Date(
+                        submission.patient.birthDate,
+                      ).toLocaleDateString()
+                    : "",
+                  "Room ID": submission.room?.id || "",
+                  "Room Number": submission.room?.roomNumber || "",
+                  "Room Class": submission.room?.roomClass || "",
+                  "Room Bed Number": submission.room?.bedNumber || "",
+                  "Payer ID": submission.payer?.id || "",
+                  "Payer Name": submission.payer?.payerName || "",
+                  "Submission Status": submission.status || "",
+                  "Submission Created At": submission.createdAt
+                    ? new Date(submission.createdAt).toLocaleDateString()
+                    : "",
+                  "Submission Updated At": submission.updatedAt
+                    ? new Date(submission.updatedAt).toLocaleDateString()
+                    : "",
+                  "Detail ID": detail.id,
+                  "Detail Type": detail.submissionType,
+                  "Detail Value": detail.submissionValue,
+                  "Detail Note": detail.note || "",
+                  "Detail Created At": detail.createdAt
+                    ? new Date(detail.createdAt).toLocaleDateString()
+                    : "",
+                  "Detail Updated At": detail.updatedAt
+                    ? new Date(detail.updatedAt).toLocaleDateString()
+                    : "",
+                  "Pending ID": pending.id,
+                  "Pending Type": pending.pendingType,
+                  "Pending Note": pending.pendingNote || "",
+                  "Pending Active": pending.isActive ? "Yes" : "No",
+                  "Pending Created At": pending.createdAt
+                    ? new Date(pending.createdAt).toLocaleDateString()
+                    : "",
+                  "Pending Updated At": pending.updatedAt
+                    ? new Date(pending.updatedAt).toLocaleDateString()
+                    : "",
+                });
+              });
+            } else {
+              // If no pending records, create a row for the detail without pending info
+              flattenedData.push({
+                "Submission ID": submission.id,
+                "Submission Number": submission.submissionNumber,
+                "Patient ID": submission.patient?.id || "",
+                "Patient Name": submission.patient?.patientName || "",
+                "Patient MRN": submission.patient?.medicalRecordNumber || "",
+                "Patient Gender": submission.patient?.gender || "",
+                "Patient Birth Date": submission.patient?.birthDate
+                  ? new Date(submission.patient.birthDate).toLocaleDateString()
+                  : "",
+                "Room ID": submission.room?.id || "",
+                "Room Number": submission.room?.roomNumber || "",
+                "Room Class": submission.room?.roomClass || "",
+                "Room Bed Number": submission.room?.bedNumber || "",
+                "Payer ID": submission.payer?.id || "",
+                "Payer Name": submission.payer?.payerName || "",
+                "Submission Status": submission.status || "",
+                "Submission Created At": submission.createdAt
+                  ? new Date(submission.createdAt).toLocaleDateString()
+                  : "",
+                "Submission Updated At": submission.updatedAt
+                  ? new Date(submission.updatedAt).toLocaleDateString()
+                  : "",
+                "Detail ID": detail.id,
+                "Detail Type": detail.submissionType,
+                "Detail Value": detail.submissionValue,
+                "Detail Note": detail.note || "",
+                "Detail Created At": detail.createdAt
+                  ? new Date(detail.createdAt).toLocaleDateString()
+                  : "",
+                "Detail Updated At": detail.updatedAt
+                  ? new Date(detail.updatedAt).toLocaleDateString()
+                  : "",
+                "Pending ID": "",
+                "Pending Type": "",
+                "Pending Note": "",
+                "Pending Active": "",
+                "Pending Created At": "",
+                "Pending Updated At": "",
+              });
+            }
+          });
+        } else {
+          // If no details, create a basic submission row
+          flattenedData.push({
+            "Submission ID": submission.id,
+            "Submission Number": submission.submissionNumber,
+            "Patient ID": submission.patient?.id || "",
+            "Patient Name": submission.patient?.patientName || "",
+            "Patient MRN": submission.patient?.medicalRecordNumber || "",
+            "Patient Gender": submission.patient?.gender || "",
+            "Patient Birth Date": submission.patient?.birthDate
+              ? new Date(submission.patient.birthDate).toLocaleDateString()
+              : "",
+            "Room ID": submission.room?.id || "",
+            "Room Number": submission.room?.roomNumber || "",
+            "Room Class": submission.room?.roomClass || "",
+            "Room Bed Number": submission.room?.bedNumber || "",
+            "Payer ID": submission.payer?.id || "",
+            "Payer Name": submission.payer?.payerName || "",
+            "Submission Status": submission.status || "",
+            "Submission Created At": submission.createdAt
+              ? new Date(submission.createdAt).toLocaleDateString()
+              : "",
+            "Submission Updated At": submission.updatedAt
+              ? new Date(submission.updatedAt).toLocaleDateString()
+              : "",
+            "Detail ID": "",
+            "Detail Type": "",
+            "Detail Value": "",
+            "Detail Note": "",
+            "Detail Created At": "",
+            "Detail Updated At": "",
+            "Pending ID": "",
+            "Pending Type": "",
+            "Pending Note": "",
+            "Pending Active": "",
+            "Pending Created At": "",
+            "Pending Updated At": "",
+          });
+        }
+      });
+
+      // Create worksheet and workbook
+      const worksheet = XLSX.utils.json_to_sheet(flattenedData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Submissions");
+
+      // Generate and download Excel file with timestamp
+      XLSX.writeFile(
+        workbook,
+        `submissions_export_${new Date().toISOString().split("T")[0]}_${Date.now()}.xlsx`,
+      );
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      alert("Failed to export submissions to Excel. Please try again.");
     }
   };
 
@@ -512,17 +728,17 @@ export default function SubmissionsPage() {
     <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold text-gray-900">Submissions</h1>
-        
+
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button 
+              <Button
                 onClick={() => {
                   setEditingSubmission(null);
                   // Reset selection values
-                  setSelectedPatientId('');
-                  setSelectedRoomId('');
-                  setSelectedPayerId('');
+                  setSelectedPatientId("");
+                  setSelectedRoomId("");
+                  setSelectedPayerId("");
                 }}
                 className="w-full sm:w-auto"
               >
@@ -534,7 +750,8 @@ export default function SubmissionsPage() {
               <DialogHeader>
                 <DialogTitle>Add New Submission</DialogTitle>
                 <DialogDescription>
-                  Enter submission information to create a new insurance submission
+                  Enter submission information to create a new insurance
+                  submission
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={onSubmit}>
@@ -544,10 +761,10 @@ export default function SubmissionsPage() {
                       <SearchableSelect
                         id="patientId"
                         label="Patient"
-                        options={patients.map(p => ({
+                        options={patients.map((p) => ({
                           id: p.id,
                           name: p.patientName,
-                          additionalInfo: p.medicalRecordNumber
+                          additionalInfo: p.medicalRecordNumber,
                         }))}
                         value={selectedPatientId}
                         onChange={setSelectedPatientId}
@@ -555,16 +772,16 @@ export default function SubmissionsPage() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-4 items-center gap-4">
                     <div className="col-span-4">
                       <SearchableSelect
                         id="roomId"
                         label="Room"
-                        options={rooms.map(r => ({
+                        options={rooms.map((r) => ({
                           id: r.id,
                           name: r.roomNumber,
-                          additionalInfo: r.roomClass
+                          additionalInfo: r.roomClass,
                         }))}
                         value={selectedRoomId}
                         onChange={setSelectedRoomId}
@@ -572,15 +789,15 @@ export default function SubmissionsPage() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-4 items-center gap-4">
                     <div className="col-span-4">
                       <SearchableSelect
                         id="payerId"
                         label="Payer"
-                        options={payers.map(p => ({
+                        options={payers.map((p) => ({
                           id: p.id,
-                          name: p.payerName
+                          name: p.payerName,
                         }))}
                         value={selectedPayerId}
                         onChange={setSelectedPayerId}
@@ -590,13 +807,15 @@ export default function SubmissionsPage() {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button type="submit">
-                    Create Submission
-                  </Button>
+                  <Button type="submit">Create Submission</Button>
                 </DialogFooter>
               </form>
             </DialogContent>
           </Dialog>
+          <Button onClick={handleExportExcel} className="w-full sm:w-auto">
+            <Download className="h-4 w-4 mr-2" />
+            Export to Excel
+          </Button>
         </div>
       </div>
 
@@ -610,13 +829,15 @@ export default function SubmissionsPage() {
                 id="filter-submission-number"
                 placeholder="Filter by Submission #"
                 value={tempFilters.submissionNumber}
-                onChange={(e) => handleFilterChange('submissionNumber', e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange("submissionNumber", e.target.value)
+                }
                 className="pl-10 w-full"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
             </div>
           </div>
-          
+
           <div>
             <Label htmlFor="filter-patient-name">Patient Name</Label>
             <div className="relative mt-1">
@@ -624,13 +845,15 @@ export default function SubmissionsPage() {
                 id="filter-patient-name"
                 placeholder="Filter by Patient Name"
                 value={tempFilters.patientName}
-                onChange={(e) => handleFilterChange('patientName', e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange("patientName", e.target.value)
+                }
                 className="pl-10 w-full"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
             </div>
           </div>
-          
+
           <div>
             <Label htmlFor="filter-payer-name">Payer</Label>
             <div className="relative mt-1">
@@ -638,19 +861,21 @@ export default function SubmissionsPage() {
                 id="filter-payer-name"
                 placeholder="Filter by Payer"
                 value={tempFilters.payerName}
-                onChange={(e) => handleFilterChange('payerName', e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange("payerName", e.target.value)
+                }
                 className="pl-10 w-full"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
             </div>
           </div>
-          
+
           <div>
             <Label htmlFor="filter-status">Status</Label>
             <select
               id="filter-status"
               value={tempFilters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
+              onChange={(e) => handleFilterChange("status", e.target.value)}
               className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
             >
               <option value="">All Status</option>
@@ -662,22 +887,18 @@ export default function SubmissionsPage() {
             </select>
           </div>
         </div>
-        
+
         {/* Filter Buttons */}
         <div className="flex gap-2 mt-4">
-          <Button 
-            type="button" 
+          <Button
+            type="button"
             onClick={handleApplyFilters}
             className="bg-blue-600 hover:bg-blue-700"
           >
             <Search className="h-4 w-4 mr-2" />
             Filter
           </Button>
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={handleClearFilters}
-          >
+          <Button type="button" variant="outline" onClick={handleClearFilters}>
             Clear Filters
           </Button>
         </div>
@@ -702,39 +923,59 @@ export default function SubmissionsPage() {
             {submissions.map((submission) => {
               // Calculate total details and pending records
               const totalDetails = submission.details.length;
-              const totalPending = submission.details.reduce((count, detail) => {
-                return count + detail.pendingHistories.filter(ph => ph.isActive).length;
-              }, 0);
-              
+              const totalPending = submission.details.reduce(
+                (count, detail) => {
+                  return (
+                    count +
+                    detail.pendingHistories.filter((ph) => ph.isActive).length
+                  );
+                },
+                0,
+              );
+
               return (
                 <TableRow key={submission.id}>
-                  <TableCell className="font-medium">{submission.submissionNumber}</TableCell>
-                  <TableCell>{submission.patient?.patientName || 'N/A'}</TableCell>
-                  <TableCell>{submission.payer?.payerName || 'N/A'}</TableCell>
+                  <TableCell className="font-medium">
+                    {submission.submissionNumber}
+                  </TableCell>
                   <TableCell>
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                      ${submission.status === 'APPROVED' ? 'bg-green-100 text-green-800' : 
-                        submission.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 
-                        submission.status === 'REJECTED' ? 'bg-red-100 text-red-800' : 
-                        submission.status === 'SUBMITTED' ? 'bg-blue-100 text-blue-800' :
-                        'bg-gray-100 text-gray-800'}`}>
+                    {submission.patient?.patientName || "N/A"}
+                  </TableCell>
+                  <TableCell>{submission.payer?.payerName || "N/A"}</TableCell>
+                  <TableCell>
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                      ${
+                        submission.status === "APPROVED"
+                          ? "bg-green-100 text-green-800"
+                          : submission.status === "PENDING"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : submission.status === "REJECTED"
+                              ? "bg-red-100 text-red-800"
+                              : submission.status === "SUBMITTED"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
                       {submission.status}
                     </span>
                   </TableCell>
                   <TableCell>{totalDetails}</TableCell>
                   <TableCell>{totalPending}</TableCell>
-                  <TableCell>{new Date(submission.createdAt).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    {new Date(submission.createdAt).toLocaleDateString()}
+                  </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => handleView(submission)}
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => handleExportPdf(submission.id)}
                       >
@@ -743,7 +984,7 @@ export default function SubmissionsPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-              )
+              );
             })}
             {submissions.length === 0 && (
               <TableRow>
@@ -751,7 +992,7 @@ export default function SubmissionsPage() {
                   colSpan={8}
                   className="text-center py-8 text-gray-500"
                 >
-                  {loading ? 'Loading...' : 'No submissions found'}
+                  {loading ? "Loading..." : "No submissions found"}
                 </TableCell>
               </TableRow>
             )}
@@ -763,13 +1004,17 @@ export default function SubmissionsPage() {
       {pagination.totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
           <div className="text-sm text-gray-700">
-            Showing <span className="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> to{' '}
+            Showing{" "}
+            <span className="font-medium">
+              {(pagination.page - 1) * pagination.limit + 1}
+            </span>{" "}
+            to{" "}
             <span className="font-medium">
               {Math.min(pagination.page * pagination.limit, pagination.total)}
-            </span>{' '}
+            </span>{" "}
             of <span className="font-medium">{pagination.total}</span> results
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
@@ -779,11 +1024,11 @@ export default function SubmissionsPage() {
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            
+
             <div className="flex items-center gap-1">
               {[...Array(Math.min(5, pagination.totalPages))].map((_, i) => {
                 let pageNum;
-                
+
                 if (pagination.totalPages <= 5) {
                   // Show all pages if total pages is 5 or less
                   pageNum = i + 1;
@@ -797,21 +1042,27 @@ export default function SubmissionsPage() {
                   // Show 2 pages before and after current page
                   pageNum = pagination.page - 2 + i;
                 }
-                
+
                 return (
                   <Button
                     key={pageNum}
-                    variant={pagination.page === pageNum ? "default" : "outline"}
+                    variant={
+                      pagination.page === pageNum ? "default" : "outline"
+                    }
                     size="sm"
                     onClick={() => handlePageChange(pageNum)}
-                    className={pagination.page === pageNum ? "bg-blue-600 hover:bg-blue-700" : ""}
+                    className={
+                      pagination.page === pageNum
+                        ? "bg-blue-600 hover:bg-blue-700"
+                        : ""
+                    }
                   >
                     {pageNum}
                   </Button>
                 );
               })}
             </div>
-            
+
             <Button
               variant="outline"
               size="sm"

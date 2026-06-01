@@ -1,34 +1,43 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+} from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import * as XLSX from "xlsx";
 
 // Define schema for payer form validation
 const payerSchema = z.object({
-  payerName: z.string().min(1, 'Payer Name is required'),
+  payerName: z.string().min(1, "Payer Name is required"),
 });
 
 type PayerFormValues = z.infer<typeof payerSchema>;
@@ -58,20 +67,26 @@ export default function PayersPage() {
     page: 1,
     totalPages: 1,
     total: 0,
-    limit: 10
+    limit: 10,
   });
-  
+
   // Filter states
   const [filters, setFilters] = useState({
-    payerName: ''
+    payerName: "",
   });
-  
+
   // Temporary filter values for input fields
   const [tempFilters, setTempFilters] = useState({
-    payerName: ''
+    payerName: "",
   });
-  
-  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<PayerFormValues>({
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<PayerFormValues>({
     resolver: zodResolver(payerSchema),
   });
 
@@ -84,25 +99,25 @@ export default function PayersPage() {
           page: pagination.page.toString(),
           limit: pagination.limit.toString(),
         });
-        
+
         if (filters.payerName) {
-          queryParams.append('payerName', filters.payerName);
+          queryParams.append("payerName", filters.payerName);
         }
 
         const response = await fetch(`/api/payers?${queryParams}`, {
-          credentials: 'include' // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
         });
         if (!response.ok) {
-          throw new Error('Failed to fetch payers');
+          throw new Error("Failed to fetch payers");
         }
         const result: PaginatedResult<Payer> = await response.json();
-        
+
         setPayers(result.data);
         setPagination({
           page: result.page,
           totalPages: result.totalPages,
           total: result.total,
-          limit: result.limit
+          limit: result.limit,
         });
       } catch (error) {
         console.error("Error loading payers:", error);
@@ -118,92 +133,92 @@ export default function PayersPage() {
     try {
       console.log("Saving payer:", data);
       let response;
-      
+
       if (editingPayer) {
         // Update existing payer
         response = await fetch(`/api/payers/${editingPayer.id}`, {
-          method: 'PUT',
+          method: "PUT",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
-          credentials: 'include', // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
           body: JSON.stringify({
-            payerName: data.payerName
+            payerName: data.payerName,
           }),
         });
-        
+
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to update payer');
+          throw new Error(errorData.error || "Failed to update payer");
         }
-        
+
         // Refresh the payer list after update
         const queryParams = new URLSearchParams({
           page: pagination.page.toString(),
           limit: pagination.limit.toString(),
         });
-        
+
         if (filters.payerName) {
-          queryParams.append('payerName', filters.payerName);
+          queryParams.append("payerName", filters.payerName);
         }
 
         const refreshResponse = await fetch(`/api/payers?${queryParams}`, {
-          credentials: 'include' // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
         });
         if (!refreshResponse.ok) {
-          throw new Error('Failed to refresh payers');
+          throw new Error("Failed to refresh payers");
         }
         const result: PaginatedResult<Payer> = await refreshResponse.json();
-        
+
         setPayers(result.data);
         setPagination({
           page: result.page,
           totalPages: result.totalPages,
           total: result.total,
-          limit: result.limit
+          limit: result.limit,
         });
       } else {
         // Add new payer
-        response = await fetch('/api/payers', {
-          method: 'POST',
+        response = await fetch("/api/payers", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
-          credentials: 'include', // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
           body: JSON.stringify({
-            payerName: data.payerName
+            payerName: data.payerName,
           }),
         });
-        
+
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to create payer');
+          throw new Error(errorData.error || "Failed to create payer");
         }
-        
+
         // Refresh the payer list after adding
         const queryParams = new URLSearchParams({
           page: pagination.page.toString(),
           limit: pagination.limit.toString(),
         });
-        
+
         if (filters.payerName) {
-          queryParams.append('payerName', filters.payerName);
+          queryParams.append("payerName", filters.payerName);
         }
 
         const refreshResponse = await fetch(`/api/payers?${queryParams}`, {
-          credentials: 'include' // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
         });
         if (!refreshResponse.ok) {
-          throw new Error('Failed to refresh payers');
+          throw new Error("Failed to refresh payers");
         }
         const result: PaginatedResult<Payer> = await refreshResponse.json();
-        
+
         setPayers(result.data);
         setPagination({
           page: result.page,
           totalPages: result.totalPages,
           total: result.total,
-          limit: result.limit
+          limit: result.limit,
         });
       }
 
@@ -222,7 +237,7 @@ export default function PayersPage() {
 
   const handleEdit = (payer: Payer) => {
     setEditingPayer(payer);
-    setValue('payerName', payer.payerName);
+    setValue("payerName", payer.payerName);
     setIsDialogOpen(true);
   };
 
@@ -230,38 +245,38 @@ export default function PayersPage() {
     if (window.confirm("Are you sure you want to delete this payer?")) {
       try {
         const response = await fetch(`/api/payers/${id}`, {
-          method: 'DELETE',
-          credentials: 'include' // Include credentials (cookies) in the request
+          method: "DELETE",
+          credentials: "include", // Include credentials (cookies) in the request
         });
-        
+
         if (!response.ok) {
-          throw new Error('Failed to delete payer');
+          throw new Error("Failed to delete payer");
         }
-        
+
         // Refresh the payer list after deletion
         const queryParams = new URLSearchParams({
           page: pagination.page.toString(),
           limit: pagination.limit.toString(),
         });
-        
+
         if (filters.payerName) {
-          queryParams.append('payerName', filters.payerName);
+          queryParams.append("payerName", filters.payerName);
         }
 
         const refreshResponse = await fetch(`/api/payers?${queryParams}`, {
-          credentials: 'include' // Include credentials (cookies) in the request
+          credentials: "include", // Include credentials (cookies) in the request
         });
         if (!refreshResponse.ok) {
-          throw new Error('Failed to refresh payers');
+          throw new Error("Failed to refresh payers");
         }
         const result: PaginatedResult<Payer> = await refreshResponse.json();
-        
+
         setPayers(result.data);
         setPagination({
           page: result.page,
           totalPages: result.totalPages,
           total: result.total,
-          limit: result.limit
+          limit: result.limit,
         });
       } catch (error) {
         console.error("Error deleting payer:", error);
@@ -270,10 +285,13 @@ export default function PayersPage() {
     }
   };
 
-  const handleFilterChange = (field: keyof typeof tempFilters, value: string) => {
-    setTempFilters(prev => ({
+  const handleFilterChange = (
+    field: keyof typeof tempFilters,
+    value: string,
+  ) => {
+    setTempFilters((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -281,33 +299,79 @@ export default function PayersPage() {
     // Apply temporary filters to actual filters
     setFilters(tempFilters);
     // Reset to first page when filters change
-    setPagination(prev => ({
+    setPagination((prev) => ({
       ...prev,
-      page: 1
+      page: 1,
     }));
   };
 
   const handleClearFilters = () => {
     // Clear all filters
     setTempFilters({
-      payerName: ''
+      payerName: "",
     });
     setFilters({
-      payerName: ''
+      payerName: "",
     });
     // Reset to first page
-    setPagination(prev => ({
+    setPagination((prev) => ({
       ...prev,
-      page: 1
+      page: 1,
     }));
   };
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
-      setPagination(prev => ({
+      setPagination((prev) => ({
         ...prev,
-        page: newPage
+        page: newPage,
       }));
+    }
+  };
+
+  // Function to export payers to Excel
+  const handleExportExcel = async () => {
+    try {
+      // Fetch payers with the same filters that are currently applied
+      const queryParams = new URLSearchParams({
+        limit: '10000', // Using a high limit to get all matching records
+      });
+      
+      // Add active filters to the query params
+      if (filters.payerName) {
+        queryParams.append('payerName', filters.payerName);
+      }
+
+      const response = await fetch(`/api/payers?${queryParams}`, {
+        credentials: 'include' // Include credentials (cookies) in the request
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch payers for export");
+      }
+
+      const allPayers = await response.json();
+
+      // Format data for Excel export
+      const formattedData = allPayers.data.map((payer: any) => ({
+        'ID': payer.id,
+        'Payer Name': payer.payerName,
+        'Created At': new Date(payer.createdAt).toLocaleDateString(),
+        'Updated At': new Date(payer.updatedAt).toLocaleDateString(),
+      }));
+
+      // Create worksheet and workbook
+      const worksheet = XLSX.utils.json_to_sheet(formattedData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Payers");
+
+      // Generate and download Excel file with timestamp
+      XLSX.writeFile(
+        workbook,
+        `payers_export_${new Date().toISOString().split("T")[0]}_${Date.now()}.xlsx`,
+      );
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      alert("Failed to export payers to Excel. Please try again.");
     }
   };
 
@@ -328,7 +392,7 @@ export default function PayersPage() {
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button 
+              <Button
                 onClick={() => {
                   setEditingPayer(null);
                   reset();
@@ -341,11 +405,13 @@ export default function PayersPage() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>{editingPayer ? 'Edit Payer' : 'Add New Payer'}</DialogTitle>
+                <DialogTitle>
+                  {editingPayer ? "Edit Payer" : "Add New Payer"}
+                </DialogTitle>
                 <DialogDescription>
-                  {editingPayer 
-                    ? 'Update payer information' 
-                    : 'Enter payer information to add a new payer'}
+                  {editingPayer
+                    ? "Update payer information"
+                    : "Enter payer information to add a new payer"}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit(onSubmit)}>
@@ -357,7 +423,7 @@ export default function PayersPage() {
                     <Input
                       id="payerName"
                       className="col-span-3"
-                      {...register('payerName')}
+                      {...register("payerName")}
                     />
                     {errors.payerName && (
                       <p className="col-start-2 col-span-3 text-red-500 text-sm">
@@ -368,12 +434,16 @@ export default function PayersPage() {
                 </div>
                 <DialogFooter>
                   <Button type="submit">
-                    {editingPayer ? 'Update Payer' : 'Add Payer'}
+                    {editingPayer ? "Update Payer" : "Add Payer"}
                   </Button>
                 </DialogFooter>
               </form>
             </DialogContent>
           </Dialog>
+          <Button onClick={handleExportExcel} className="w-full sm:w-auto">
+            <Download className="h-4 w-4 mr-2" />
+            Export to Excel
+          </Button>
         </div>
       </div>
 
@@ -387,29 +457,27 @@ export default function PayersPage() {
                 id="filter-payer-name"
                 placeholder="Filter by Payer Name"
                 value={tempFilters.payerName}
-                onChange={(e) => handleFilterChange('payerName', e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange("payerName", e.target.value)
+                }
                 className="pl-10 w-full"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
             </div>
           </div>
         </div>
-        
+
         {/* Filter Buttons */}
         <div className="flex gap-2 mt-4">
-          <Button 
-            type="button" 
+          <Button
+            type="button"
             onClick={handleApplyFilters}
             className="bg-blue-600 hover:bg-blue-700"
           >
             <Search className="h-4 w-4 mr-2" />
             Filter
           </Button>
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={handleClearFilters}
-          >
+          <Button type="button" variant="outline" onClick={handleClearFilters}>
             Clear Filters
           </Button>
         </div>
@@ -429,15 +497,15 @@ export default function PayersPage() {
                 <TableCell className="font-medium">{payer.payerName}</TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => handleEdit(payer)}
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => handleDelete(payer.id)}
                     >
@@ -465,13 +533,17 @@ export default function PayersPage() {
       {pagination.totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
           <div className="text-sm text-gray-700">
-            Showing <span className="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> to{' '}
+            Showing{" "}
+            <span className="font-medium">
+              {(pagination.page - 1) * pagination.limit + 1}
+            </span>{" "}
+            to{" "}
             <span className="font-medium">
               {Math.min(pagination.page * pagination.limit, pagination.total)}
-            </span>{' '}
+            </span>{" "}
             of <span className="font-medium">{pagination.total}</span> results
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
@@ -481,11 +553,11 @@ export default function PayersPage() {
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            
+
             <div className="flex items-center gap-1">
               {[...Array(Math.min(5, pagination.totalPages))].map((_, i) => {
                 let pageNum;
-                
+
                 if (pagination.totalPages <= 5) {
                   // Show all pages if total pages is 5 or less
                   pageNum = i + 1;
@@ -499,21 +571,27 @@ export default function PayersPage() {
                   // Show 2 pages before and after current page
                   pageNum = pagination.page - 2 + i;
                 }
-                
+
                 return (
                   <Button
                     key={pageNum}
-                    variant={pagination.page === pageNum ? "default" : "outline"}
+                    variant={
+                      pagination.page === pageNum ? "default" : "outline"
+                    }
                     size="sm"
                     onClick={() => handlePageChange(pageNum)}
-                    className={pagination.page === pageNum ? "bg-blue-600 hover:bg-blue-700" : ""}
+                    className={
+                      pagination.page === pageNum
+                        ? "bg-blue-600 hover:bg-blue-700"
+                        : ""
+                    }
                   >
                     {pageNum}
                   </Button>
                 );
               })}
             </div>
-            
+
             <Button
               variant="outline"
               size="sm"
