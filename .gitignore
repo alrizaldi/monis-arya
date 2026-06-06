@@ -10,3 +10,5 @@ iisnode
 note.txt
 *.log
 .next/
+.next/cache/
+.next/server
