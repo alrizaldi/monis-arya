@@ -483,6 +483,49 @@ export default function SubmissionDetailPage() {
     }
   };
 
+  const handleDeleteDetail = async (detailId: string) => {
+    const detail = details.find(d => d.id === detailId);
+    if (!detail) {
+      alert('Detail not found');
+      return;
+    }
+    
+    if (!confirm(`Are you sure you want to delete this submission detail (${detail.submissionType})? This will also delete ${detail.pendingHistories.length} pending record(s) associated with this detail. This action cannot be undone.`)) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/submissions/${id}/details/${detailId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include credentials (cookies) in the request
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete detail');
+      }
+      
+      // Refresh the submission data
+      const refreshResponse = await fetch(`/api/submissions/${id}`, {
+        credentials: 'include' // Include credentials (cookies) in the request
+      });
+      if (!refreshResponse.ok) {
+        throw new Error('Failed to refresh submission');
+      }
+      const refreshedData = await refreshResponse.json();
+      setSubmission(refreshedData);
+      setDetails(refreshedData.details || []);
+      
+      alert('Detail deleted successfully!');
+    } catch (error) {
+      console.error("Error deleting detail:", error);
+      alert(error instanceof Error ? error.message : "An error occurred while deleting the detail");
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -786,6 +829,29 @@ export default function SubmissionDetailPage() {
                         onClick={() => handleAddPending(detail)}
                       >
                         <Clock className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setEditingDetail(detail);
+                          resetDetail({
+                            submissionType: detail.submissionType,
+                            pengajuan: detail.pengajuan,
+                            note: detail.note || ''
+                          });
+                          setIsDetailDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => handleDeleteDetail(detail.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                     <div className="flex space-x-1">

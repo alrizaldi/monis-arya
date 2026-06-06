@@ -714,6 +714,81 @@ export default function SubmissionsPage() {
     }
   };
 
+  const handleDeleteSubmission = async (submissionId: string, submissionNumber: string) => {
+    // Get the submission to calculate related records
+    try {
+      const response = await fetch(`/api/submissions/${submissionId}`, {
+        credentials: 'include', // Include credentials (cookies) in the request
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch submission details');
+      }
+      
+      const submission = await response.json();
+      const totalDetails = submission.details ? submission.details.length : 0;
+      let totalPending = 0;
+      
+      if (submission.details) {
+        submission.details.forEach((detail: any) => {
+          if (detail.pendingHistories) {
+            totalPending += detail.pendingHistories.length;
+          }
+        });
+      }
+      
+      if (!confirm(`Are you sure you want to delete submission ${submissionNumber}? This will also delete ${totalDetails} detail(s) and ${totalPending} pending record(s) associated with this submission. This action cannot be undone.`)) {
+        return;
+      }
+      
+      const deleteResponse = await fetch(`/api/submissions/${submissionId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include credentials (cookies) in the request
+      });
+      
+      if (!deleteResponse.ok) {
+        const errorData = await deleteResponse.json();
+        throw new Error(errorData.error || 'Failed to delete submission');
+      }
+      
+      // Refresh the submission list after deletion
+      const queryParams = new URLSearchParams({
+        page: pagination.page.toString(),
+        limit: pagination.limit.toString(),
+      });
+
+      // Only append filters if they have values
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value.trim() !== "") {
+          queryParams.append(key, value);
+        }
+      });
+
+      const refreshResponse = await fetch(`/api/submissions?${queryParams}`, {
+        credentials: 'include', // Include credentials (cookies) in the request
+      });
+      if (!refreshResponse.ok) {
+        throw new Error('Failed to refresh submissions');
+      }
+      const result = await refreshResponse.json();
+
+      setSubmissions(result.data);
+      setPagination({
+        page: result.page,
+        totalPages: result.totalPages,
+        total: result.total,
+        limit: result.limit,
+      });
+      
+      alert('Submission deleted successfully!');
+    } catch (error) {
+      console.error("Error deleting submission:", error);
+      alert(error instanceof Error ? error.message : "An error occurred while deleting the submission");
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -980,6 +1055,14 @@ export default function SubmissionsPage() {
                         onClick={() => handleExportPdf(submission.id)}
                       >
                         <FileText className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => handleDeleteSubmission(submission.id, submission.submissionNumber)}
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>

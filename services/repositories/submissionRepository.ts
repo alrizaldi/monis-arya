@@ -121,6 +121,21 @@ export class SubmissionRepository {
   }
 
   async delete(id: string) {
+    // First delete all related pending histories
+    await prisma.pendingHistory.deleteMany({
+      where: {
+        submissionDetail: {
+          submissionId: id
+        }
+      }
+    });
+    
+    // Then delete all related submission details
+    await prisma.submissionDetail.deleteMany({
+      where: { submissionId: id }
+    });
+    
+    // Finally delete the submission
     return await prisma.submission.delete({
       where: { id }
     });

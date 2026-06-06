@@ -104,6 +104,12 @@ export class SubmissionDetailRepository {
   }
 
   async delete(id: string) {
+    // First delete all related pending histories to avoid foreign key constraint
+    await prisma.pendingHistory.deleteMany({
+      where: { submissionDetailId: id }
+    });
+    
+    // Then delete the submission detail
     return await prisma.submissionDetail.delete({
       where: { id }
     });

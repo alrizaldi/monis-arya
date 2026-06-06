@@ -265,6 +265,15 @@ export class SubmissionService {
       throw new Error('Submission not found');
     }
     
+    // Check if there are any related records that will also be deleted
+    const details = await submissionDetailRepo.findBySubmissionId(id);
+    let totalDetails = details.length;
+    let totalPending = 0;
+    
+    for (const detail of details) {
+      totalPending += detail.pendingHistories.length;
+    }
+    
     await submissionRepo.delete(id);
     
     // Log the deletion
@@ -272,7 +281,7 @@ export class SubmissionService {
       moduleName: 'Submissions',
       actionType: 'DELETE_SUBMISSION',
       referenceId: id,
-      description: `Deleted submission ${submission.submissionNumber}`,
+      description: `Deleted submission ${submission.submissionNumber} along with ${totalDetails} detail(s) and ${totalPending} pending record(s)`,
       createdBy: userEmail
     });
   }
@@ -348,6 +357,9 @@ export class SubmissionService {
       throw new Error('Submission detail not found');
     }
     
+    // Check if there are any pending records that will also be deleted
+    const pendingCount = detail.pendingHistories.length;
+    
     await submissionDetailRepo.delete(id);
     
     // Check if submission should be marked as PENDING due to active pending records
@@ -358,7 +370,7 @@ export class SubmissionService {
       moduleName: 'Submissions',
       actionType: 'DELETE_SUBMISSION_DETAIL',
       referenceId: detail.submissionId,
-      description: `Deleted submission detail from submission ${detail.submission.submissionNumber}`,
+      description: `Deleted submission detail from submission ${detail.submission.submissionNumber} along with ${pendingCount} pending record(s)`,
       createdBy: userEmail
     });
   }
